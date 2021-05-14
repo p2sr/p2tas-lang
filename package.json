@@ -1,7 +1,7 @@
 {
     "name": "p2tas-lang",
     "displayName": "Portal 2 TAS tools Lang",
-    "description": "Syntax highlighting for the Portal 2 TASing script language",
+    "description": "Syntax highlighting, snippets, autocompletion for the Portal 2 TASing script language",
     "version": "0.1.0",
     "engines": {
         "vscode": "^1.56.0"
