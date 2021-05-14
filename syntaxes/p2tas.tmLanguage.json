@@ -1,31 +1,33 @@
 {
 	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
 	"name": "Portal 2 TAS script",
-	"patterns": [
-		{
-			"include": "#keywords"
-		},
-		{
-			"include": "#strings"
-		}
-	],
+	"patterns": [{"include": "#keywords"}],
 	"repository": {
 		"keywords": {
 			"patterns": [{
-				"name": "keyword.control.p2tas",
-				"match": "\\b(if|while|for|return)\\b"
+				"name": "keyword.control.p2tas_start",
+				"match": "start"
+			},
+			{
+				"name": "keyword.other.start_args",
+				"match": "now|save|map"
+			},
+			{
+				"name": "keyword.other.tools_args",
+				"match": "strafe|autojump|absmov"
+			},
+			{
+				"name": "variable.parameter",
+				"match": "on|off|none|vec|ang|veccam|max|keep|ups|forward|left|right|deg"
+			},
+			{
+				"name":"string",
+				"match": ">|\\|"
+			},
+			{
+				"name": "constant.numeric.tick_number",
+				"match": "^\\d+"
 			}]
-		},
-		"strings": {
-			"name": "string.quoted.double.p2tas",
-			"begin": "\"",
-			"end": "\"",
-			"patterns": [
-				{
-					"name": "constant.character.escape.p2tas",
-					"match": "\\\\."
-				}
-			]
 		}
 	},
 	"scopeName": "source.p2tas"
