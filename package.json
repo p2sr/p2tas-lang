@@ -1,0 +1,25 @@
+{
+    "name": "p2tas-lang",
+    "displayName": "Portal 2 TAS tools Lang",
+    "description": "Syntax highlighting for the Portal 2 TASing script language",
+    "version": "0.0.1",
+    "engines": {
+        "vscode": "^1.56.0"
+    },
+    "categories": [
+        "Programming Languages"
+    ],
+    "contributes": {
+        "languages": [{
+            "id": "p2tas",
+            "aliases": ["Portal 2 TAS script", "p2tas"],
+            "extensions": [".p2tas"],
+            "configuration": "./language-configuration.json"
+        }],
+        "grammars": [{
+            "language": "p2tas",
+            "scopeName": "source.p2tas",
+            "path": "./syntaxes/p2tas.tmLanguage.json"
+        }]
+    }
+}
