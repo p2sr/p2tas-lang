@@ -6,19 +6,19 @@
 		"keywords": {
 			"patterns": [{
 				"name": "keyword.control.p2tas_start",
-				"match": "start"
+				"match": "\\bstart\\b"
 			},
 			{
 				"name": "keyword.other.start_args",
-				"match": "now|save|map"
+				"match": "\\b(now|save|map)\\b"
 			},
 			{
 				"name": "keyword.other.tools_args",
-				"match": "strafe|autojump|absmov"
+				"match": "\\b(strafe|autojump|absmov)\\b"
 			},
 			{
 				"name": "variable.parameter",
-				"match": "on|off|none|vec|ang|veccam|max|keep|ups|forward|left|right|deg"
+				"match": "\\b(on|off|none|vec|ang|veccam|max|keep|ups|forward|left|right|deg)\\b"
 			},
 			{
 				"name":"string",
