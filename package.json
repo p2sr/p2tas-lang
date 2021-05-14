@@ -7,7 +7,8 @@
         "vscode": "^1.56.0"
     },
     "categories": [
-        "Programming Languages"
+        "Programming Languages",
+        "Snippets"
     ],
     "contributes": {
         "languages": [{
@@ -20,6 +21,12 @@
             "language": "p2tas",
             "scopeName": "source.p2tas",
             "path": "./syntaxes/p2tas.tmLanguage.json"
-        }]
+        }],
+        "snippets": [
+            {
+                "language": "p2tas",
+                "path": "./snippets.json"
+            }
+        ]
     }
 }

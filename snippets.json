@@ -1,0 +1,22 @@
+{
+    "Start TAS script now": {
+        "prefix": "now",
+        "body": "start now",
+        "description": "Start the TAS script"
+    },
+    "Start TAS script from save": {
+        "prefix": "save",
+        "body": "start save ${1:save_name}",
+        "description": "Start the TAS script"
+    },
+    "Start TAS script from map": {
+        "prefix": "map",
+        "body": "start map ${1:map_name}",
+        "description": "Start the TAS script"
+    },
+    "Reset virtual controller inputs": {
+        "prefix": "reset",
+        "body": "${1:tick}>0 0|0 0|jduzbo||",
+        "description": "Command with all neutral inputs"
+    }
+}
