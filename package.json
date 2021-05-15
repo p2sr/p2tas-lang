@@ -3,6 +3,11 @@
     "displayName": "Portal 2 TAS tools Lang",
     "description": "Syntax highlighting, snippets, autocompletion for the Portal 2 TASing script language",
     "version": "0.1.0",
+    "publisher": "RainbowwPhoenixx",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/RainbowwPhoenixx/p2tas-lang"
+    },
     "engines": {
         "vscode": "^1.56.0"
     },
@@ -39,7 +44,7 @@
         ]
     },
     "activationEvents": [
-        "*"
+        "onLanguage:p2tas"
     ],
     "main": "./out/extension.js",
     "scripts": {
