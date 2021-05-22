@@ -18,5 +18,10 @@
         "prefix": "reset",
         "body": "${1:tick}>0 0|0 0|jduzbo||",
         "description": "Command with all neutral inputs"
+    },
+    "Insert an empty instruction line": {
+        "prefix": "empty",
+        "body": "${1:tick}>||||",
+        "description": "Inserts an instruction line"
     }
 }
