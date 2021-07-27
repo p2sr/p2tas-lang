@@ -27,6 +27,10 @@
 			{
 				"name": "constant.numeric.tick_number",
 				"match": "^\\d+"
+			},
+			{
+				"name": "comment",
+				"match": "^//.*"
 			}]
 		}
 	},
