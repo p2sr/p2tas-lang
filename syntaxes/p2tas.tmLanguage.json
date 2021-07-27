@@ -14,7 +14,7 @@
 			},
 			{
 				"name": "keyword.other.tools_args",
-				"match": "\\b(strafe|autojump|absmov)\\b"
+				"match": "\\b(strafe|autojump|absmov|setang|autoaim)\\b"
 			},
 			{
 				"name": "variable.parameter",

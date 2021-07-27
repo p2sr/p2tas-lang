@@ -4,8 +4,10 @@ import * as vscode from 'vscode';
 const tokens: { [command: string]: string[]; } = {
     "start": ["now","save","map"],
     "autojump": ["on","off"],
-    "absmov": ["on","off"],
+    "absmov": ["on"],
     "strafe": ["none","off","vec","ang","veccam","max","keep","ups","forward","forwardvel","left","right","deg"],
+    "setang": [],
+    "autoaim": ["off"]
 };
 
 export function activate(context: vscode.ExtensionContext) {
