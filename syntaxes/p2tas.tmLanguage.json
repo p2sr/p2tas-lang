@@ -1,18 +1,20 @@
 {
 	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
 	"name": "Portal 2 TAS script",
-	"patterns": [{"include": "#keywords"}],
+	"patterns": [{"include": "#start"}, {"include": "#framebulk"}],
 	"repository": {
-		"keywords": {
+		"start": {
 			"patterns": [{
-				"name": "keyword.control.p2tas_start",
-				"match": "\\bstart\\b"
-			},
-			{
-				"name": "keyword.other.start_args",
-				"match": "\\b(now|save|map)\\b"
-			},
-			{
+				"name": "start_tas",
+				"match": "^\\s*(start)\\s*(now|save|map|next|cm)?",
+				"captures": {
+					"1": {"name": "keyword.control"},
+					"2": {"name": "keyword.other"}
+				}
+			}]
+		},
+		"framebulk": {
+			"patterns": [{
 				"name": "keyword.other.tools_args",
 				"match": "\\b(strafe|autojump|absmov|setang|autoaim)\\b"
 			},
@@ -26,11 +28,11 @@
 			},
 			{
 				"name": "constant.numeric.tick_number",
-				"match": "^\\d+"
+				"match": "^\\s*\\+?\\d+"
 			},
 			{
 				"name": "comment",
-				"match": "^//.*"
+				"match": "\\s*//.*"
 			}]
 		}
 	},
