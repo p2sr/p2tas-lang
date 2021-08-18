@@ -3,6 +3,8 @@
 Syntax highlighting, snippets and autocompletion for the Portal 2 TAS files.
 
 ## Release Notes
+### 0.3.0
+- Added syntax from the 1.12.4 sar update
 
 ### 0.2.0
 - Added comment coloring
