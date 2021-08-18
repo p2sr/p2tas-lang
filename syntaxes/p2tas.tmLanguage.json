@@ -1,7 +1,7 @@
 {
 	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
 	"name": "Portal 2 TAS script",
-	"patterns": [{"include": "#start"}, {"include": "#framebulk"}],
+	"patterns": [{"include": "#start"}, {"include": "#framebulk"}, {"include": "#loop"}],
 	"repository": {
 		"start": {
 			"patterns": [{
@@ -34,6 +34,18 @@
 				"name": "comment",
 				"match": "\\s*//.*"
 			}]
+		},
+		"loop": {
+			"begin": "^\\s*(REPEAT)\\s*(\\d+)",
+			"end": "^\\s*(END)",
+			"beginCaptures": {
+				"1": {"name": "keyword.control"},
+				"2": {"name": "constant.numeric"}
+			},
+			"endCaptures": {
+				"1": {"name": "keyword.control"}
+			},
+			"patterns": [{ "include": "#framebulk" }, { "include": "#loop" }]
 		}
 	},
 	"scopeName": "source.p2tas"
