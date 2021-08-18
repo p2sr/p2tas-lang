@@ -2,9 +2,9 @@
 import * as vscode from 'vscode';
 
 const tokens: { [command: string]: string[]; } = {
-    "start": ["now","save","map"],
+    "start": ["now","save","map","next","cm"],
     "autojump": ["on","off"],
-    "absmov": ["on"],
+    "absmov": ["off"],
     "strafe": ["none","off","vec","ang","veccam","max","keep","ups","forward","forwardvel","left","right","deg"],
     "setang": [],
     "autoaim": ["off"]
