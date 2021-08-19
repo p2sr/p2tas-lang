@@ -36,8 +36,8 @@
 			}]
 		},
 		"loop": {
-			"begin": "^\\s*(REPEAT)\\s*(\\d+)",
-			"end": "^\\s*(END)",
+			"begin": "^\\s*(repeat)\\s*(\\d+)",
+			"end": "^\\s*(end)",
 			"beginCaptures": {
 				"1": {"name": "keyword.control"},
 				"2": {"name": "constant.numeric"}
