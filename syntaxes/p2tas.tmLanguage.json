@@ -20,7 +20,14 @@
 			},
 			{
 				"name": "variable.parameter",
-				"match": "\\b(on|off|none|vec|ang|veccam|max|keep|ups|forward|left|right|deg)\\b"
+				"match": "\\b(on|off|none|vec|ang|veccam|max|keep|forward|left|right)\\b"
+			},
+			{
+				"name": "ups_or_deg",
+				"match": "\\b\\d+(.\\d*)?(ups|deg)\\b",
+				"captures": {
+					"2": {"name": "variable.parameter"}
+				}
 			},
 			{
 				"name":"string",

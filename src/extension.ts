@@ -5,7 +5,7 @@ const tokens: { [command: string]: string[]; } = {
     "start": ["now","save","map","next","cm"],
     "autojump": ["on","off"],
     "absmov": ["off"],
-    "strafe": ["none","off","vec","ang","veccam","max","keep","ups","forward","forwardvel","left","right","deg"],
+    "strafe": ["none","off","vec","ang","veccam","max","keep","forward","forwardvel","left","right"],
     "setang": [],
     "autoaim": ["off"]
 };
