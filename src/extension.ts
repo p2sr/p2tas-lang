@@ -7,7 +7,8 @@ const tokens: { [command: string]: string[]; } = {
     "absmov": ["off"],
     "strafe": ["none","off","vec","ang","veccam","max","keep","forward","forwardvel","left","right"],
     "setang": [],
-    "autoaim": ["off"]
+    "autoaim": ["off"],
+    "decel": ["off"]
 };
 
 export function activate(context: vscode.ExtensionContext) {

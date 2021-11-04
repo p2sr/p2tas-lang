@@ -16,7 +16,7 @@
 		"framebulk": {
 			"patterns": [{
 				"name": "keyword.other.tools_args",
-				"match": "\\b(strafe|autojump|absmov|setang|autoaim)\\b"
+				"match": "\\b(strafe|autojump|absmov|setang|autoaim|decel)\\b"
 			},
 			{
 				"name": "variable.parameter",
