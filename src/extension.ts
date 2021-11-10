@@ -52,4 +52,37 @@ export function activate(context: vscode.ExtensionContext) {
 
         context.subscriptions.push(provider);
     }
+
+    const hoverProvider = vscode.languages.registerHoverProvider('p2tas', {
+        provideHover(document: vscode.TextDocument, position: vscode.Position) {
+            const hoveredLineText = document.lineAt(position.line).text;
+
+            if (!hoveredLineText.startsWith('//') && position.character < hoveredLineText.indexOf('>')) {
+                if (!hoveredLineText.startsWith('+')) {
+                    return {
+                        contents: [`Tick: ${hoveredLineText.substring(0, hoveredLineText.indexOf('>'))}`]
+                    };
+                }
+
+                var tickCount = 0;
+                for (var i = 0; i <= position.line; i++) {
+                    const lineText = document.lineAt(i).text;
+                    if (lineText.startsWith('start') || lineText.startsWith('//') || lineText.trim().length == 0) continue;
+
+                    if (lineText.startsWith('+')) tickCount += +(lineText.substring(1, lineText.indexOf('>')));
+                    else tickCount = +(lineText.substring(0, lineText.indexOf('>')));
+                }
+
+                return {
+                    contents: [`Tick: ${tickCount}`]
+                };
+            }
+
+            return {
+                contents: []
+            };
+        }
+    });
+
+    context.subscriptions.push(hoverProvider);
 }
