@@ -58,23 +58,8 @@ export function activate(context: vscode.ExtensionContext) {
             const hoveredLineText = document.lineAt(position.line).text;
 
             if (!hoveredLineText.startsWith('//') && position.character < hoveredLineText.indexOf('>')) {
-                if (!hoveredLineText.startsWith('+')) {
-                    return {
-                        contents: [`Tick: ${hoveredLineText.substring(0, hoveredLineText.indexOf('>'))}`]
-                    };
-                }
-
-                var tickCount = 0;
-                for (var i = 0; i <= position.line; i++) {
-                    const lineText = document.lineAt(i).text;
-                    if (lineText.startsWith('start') || lineText.startsWith('//') || lineText.trim().length === 0) continue;
-
-                    if (lineText.startsWith('+')) tickCount += +(lineText.substring(1, lineText.indexOf('>')));
-                    else tickCount = +(lineText.substring(0, lineText.indexOf('>')));
-                }
-
                 return {
-                    contents: [`Tick: ${tickCount}`]
+                    contents: [`Tick: ${getTickForLine(position.line, document)}`]
                 };
             }
 
@@ -115,7 +100,7 @@ export function activate(context: vscode.ExtensionContext) {
                 return;
             }
 
-            const previousFramebulkTick = getTickForLine(previousFramebulk, editor!);
+            const previousFramebulkTick = getTickForLine(previousFramebulk, editor!.document);
             const newTick = inputTick - previousFramebulkTick;
 
             if (newTick <= 0) {
@@ -130,15 +115,15 @@ export function activate(context: vscode.ExtensionContext) {
     });
 }
 
-function getTickForLine(line: number, editor: vscode.TextEditor): number {
-    const targetLine = editor.document.lineAt(line).text;
+function getTickForLine(line: number, document: vscode.TextDocument): number {
+    const targetLine = document.lineAt(line).text;
 
     if (!targetLine.startsWith('+'))
         return +targetLine.substring(0, targetLine.indexOf('>'));
 
     var tickCount = 0;
     for (var i = 0; i <= line; i++) {
-        const lineText = editor.document.lineAt(i).text;
+        const lineText = document.lineAt(i).text;
         if (lineText.startsWith('start') || lineText.startsWith('//') || lineText.trim().length === 0) continue;
 
         if (lineText.startsWith('+')) tickCount += +(lineText.substring(1, lineText.indexOf('>')));
