@@ -41,10 +41,33 @@
                 "language": "p2tas",
                 "path": "./snippets.json"
             }
+        ],
+        "commands": [
+            {
+                "command": "p2tas-lang.relativeFromAbsoluteTick",
+                "title": "Relative tick from absolute tick",
+                "category": "P2-TAS"
+            }
+        ],
+        "menus": {
+            "commandPalette": [
+                {
+                    "command": "p2tas-lang.relativeFromAbsoluteTick",
+                    "when": "editorLangId == p2tas"
+                }
+            ]
+        },
+        "keybindings":[
+            {
+                "command": "p2tas-lang.relativeFromAbsoluteTick",
+                "key": "ctrl+shift+t",
+                "mac": "cmd+shift+t"
+            }
         ]
     },
     "activationEvents": [
-        "onLanguage:p2tas"
+        "onLanguage:p2tas",
+        "onCommand:p2tas-lang.relativeFromAbsoluteTick"
     ],
     "main": "./out/extension.js",
     "scripts": {
