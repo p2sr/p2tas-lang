@@ -2,7 +2,16 @@
 
 Syntax highlighting, snippets and autocompletion for the Portal 2 TAS files.
 
+## TODO
+- Add support for `repeat` in the hover and tick insert command
+- Optimise `getTickForLineNumber` so that it only looks for the previous absolute tick, and not recompute from the beginning
+
 ## Release Notes
+### 0.4.0
+- Added decel tool
+- Added hover that shows absolute tick when hovering before the `>` in a framebulk (thanks to david072)
+- Added command that asks for an absolute tick and inserts an empty framebulk as a relative tick (thanks to david072)
+
 ### 0.3.0
 - Added syntax from the 1.12.4 sar update
 
