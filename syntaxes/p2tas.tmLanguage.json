@@ -40,6 +40,11 @@
 			{
 				"name": "comment",
 				"match": "\\s*//.*"
+			}, 
+			{
+				"name": "comment.block",
+				"begin": "\/\\*",
+				"end": "\\*\/"
 			}]
 		},
 		"loop": {
