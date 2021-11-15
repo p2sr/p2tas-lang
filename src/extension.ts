@@ -58,8 +58,9 @@ export function activate(context: vscode.ExtensionContext) {
             const hoveredLineText = document.lineAt(position.line).text;
 
             if (!hoveredLineText.startsWith('//') && position.character < hoveredLineText.indexOf('>')) {
+                const [tick, loopStartTick] = getTickForLine(position.line, document);
                 return {
-                    contents: [`Tick: ${getTickForLine(position.line, document)}`]
+                    contents: [`Tick: ${tick}${loopStartTick ? ` (Repeat start: ${loopStartTick})` : ""}`]
                 };
             }
 
@@ -100,7 +101,13 @@ export function activate(context: vscode.ExtensionContext) {
                 return;
             }
 
-            const previousFramebulkTick = getTickForLine(previousFramebulk, editor!.document);
+            const [previousFramebulkTick, loopStartTick] = getTickForLine(previousFramebulk, editor!.document);
+            if (loopStartTick) {
+                // Command was used inside a repeat block. Cancelling
+                vscode.window.showErrorMessage("This command can't be used inside a repeat block.")
+                return;
+            }
+
             const newTick = inputTick - previousFramebulkTick;
 
             if (newTick <= 0) {
@@ -115,20 +122,38 @@ export function activate(context: vscode.ExtensionContext) {
     });
 }
 
-function getTickForLine(line: number, document: vscode.TextDocument): number {
+// Returns the tick count and the tick count of the start of a repeat block
+// FIXME: This is dumb
+function getTickForLine(line: number, document: vscode.TextDocument): [number, number | undefined] {
     const targetLine = document.lineAt(line).text;
 
     if (!targetLine.startsWith('+'))
-        return +targetLine.substring(0, targetLine.indexOf('>'));
+        return [+targetLine.substring(0, targetLine.indexOf('>')), undefined];
 
     var tickCount = 0;
     for (var i = 0; i <= line; i++) {
         const lineText = document.lineAt(i).text;
         if (lineText.startsWith('start') || lineText.startsWith('//') || lineText.trim().length === 0) continue;
 
+        if (lineText.startsWith('repeat')) {
+            // Get the number after "repeat "
+            const iterations = +(lineText.substring(6));
+
+            // Evaluate the number of ticks passing in one loop iteration
+            var tickCountInLoop = 0;
+            while (document.lineAt(++i).text.trim() !== "end" && i <= line) {
+                let lineText = document.lineAt(i).text
+                tickCountInLoop += +(lineText.substring(1, lineText.indexOf('>')));
+            }
+
+            if (i >= line) return [tickCount + tickCountInLoop, tickCount];
+            tickCount += iterations * tickCountInLoop;
+            continue;
+        }
+
         if (lineText.startsWith('+')) tickCount += +(lineText.substring(1, lineText.indexOf('>')));
         else tickCount = +(lineText.substring(0, lineText.indexOf('>')));
     }
 
-    return tickCount;
+    return [tickCount, undefined];
 }
