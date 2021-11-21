@@ -91,15 +91,6 @@ export function activate(context: vscode.ExtensionContext) {
         editor.edit(editBuilder => {
             const cursorPos = editor!.selection.active;
             var previousFramebulk = cursorPos.line;
-            // Find the next framebulk up the file (matches relative and absolute ticks)
-            while (!editor!.document.lineAt(--previousFramebulk).text.match("^[\d|+]") && previousFramebulk > 0);
-
-            if (previousFramebulk === 0) {
-                // No previous framebulk found. Inserting it at the cursor position as the absolute tick
-                if (editor!.selection.isEmpty) editBuilder.insert(cursorPos, `${input}>||||`);
-                else editBuilder.replace(editor!.selection, `${input}>||||`);
-                return;
-            }
 
             const [previousFramebulkTick, loopStartTick] = getTickForLine(previousFramebulk, editor!.document);
             if (loopStartTick) {
@@ -127,33 +118,46 @@ export function activate(context: vscode.ExtensionContext) {
 function getTickForLine(line: number, document: vscode.TextDocument): [number, number | undefined] {
     const targetLine = document.lineAt(line).text;
 
-    if (!targetLine.startsWith('+'))
+    if (targetLine.trim().length !== 0 && !targetLine.startsWith('+'))
         return [+targetLine.substring(0, targetLine.indexOf('>')), undefined];
 
     var tickCount = 0;
-    for (var i = 0; i <= line; i++) {
+    var loopStartTick = undefined;
+    var startedOutsideOfLoop = false;
+    for (var i = line; i >= 0; i--) {
         const lineText = document.lineAt(i).text;
         if (lineText.startsWith('start') || lineText.startsWith('//') || lineText.trim().length === 0) continue;
 
-        if (lineText.startsWith('repeat')) {
-            // Get the number after "repeat "
-            const iterations = +(lineText.substring(6));
-
+        if (lineText.startsWith('end')) {
+            startedOutsideOfLoop = true;
             // Evaluate the number of ticks passing in one loop iteration
             var tickCountInLoop = 0;
-            while (document.lineAt(++i).text.trim() !== "end" && i <= line) {
-                let lineText = document.lineAt(i).text
+            while (!document.lineAt(--i).text.startsWith('repeat') && i >= 0) {
+                const lineText = document.lineAt(i).text;
                 tickCountInLoop += +(lineText.substring(1, lineText.indexOf('>')));
             }
 
-            if (i >= line) return [tickCount + tickCountInLoop, tickCount];
-            tickCount += iterations * tickCountInLoop;
+            // Get the number of iterations of the repeat block
+            const iterations = +document.lineAt(i).text.substring(6);
+            tickCount += tickCountInLoop * iterations;
+            continue;
+        }
+        else if (lineText.startsWith('repeat')) {
+            // Save the current tick for later use, but only if we started inside a repeat block
+            if (!startedOutsideOfLoop)
+                loopStartTick = tickCount;
             continue;
         }
 
         if (lineText.startsWith('+')) tickCount += +(lineText.substring(1, lineText.indexOf('>')));
-        else tickCount = +(lineText.substring(0, lineText.indexOf('>')));
+        else {
+            tickCount += +(lineText.substring(0, lineText.indexOf('>')));
+            break;
+        }
     }
 
-    return [tickCount, undefined];
+    if (loopStartTick)
+        loopStartTick = tickCount - loopStartTick;
+
+    return [tickCount, loopStartTick];
 }
