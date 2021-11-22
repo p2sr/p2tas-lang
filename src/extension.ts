@@ -60,7 +60,7 @@ export function activate(context: vscode.ExtensionContext) {
             if (!hoveredLineText.startsWith('//') && position.character < hoveredLineText.indexOf('>')) {
                 const [tick, loopStartTick] = getTickForLine(position.line, document);
                 return {
-                    contents: [`Tick: ${tick}${loopStartTick ? ` (Repeat start: ${loopStartTick})` : ""}`]
+                    contents: [`Tick: ${tick}${loopStartTick !== undefined ? ` (Repeat start: ${loopStartTick})` : ""}`]
                 };
             }
 
@@ -124,22 +124,53 @@ function getTickForLine(line: number, document: vscode.TextDocument): [number, n
     var tickCount = 0;
     var loopStartTick = undefined;
     var startedOutsideOfLoop = false;
+    var multilineCommentsOpen = 0;
     for (var i = line; i >= 0; i--) {
-        const lineText = document.lineAt(i).text;
-        if (lineText.startsWith('start') || lineText.startsWith('//') || lineText.trim().length === 0) continue;
+        let lineText = document.lineAt(i).text.trim();
+        if (lineText.startsWith('start') || lineText.startsWith('//') || lineText.length === 0) continue;
+
+        const multilineCommentOpenToken = lineText.indexOf('/*');
+        const multilineCommentCloseToken = lineText.indexOf('*/');
+        if (multilineCommentOpenToken !== -1 && multilineCommentCloseToken === -1) {
+            multilineCommentsOpen--;
+            if (multilineCommentsOpen < 0) {
+                // Commment was opened but never closed
+                // FIXME: Show error line under the token. This can be done using a diagnostic collection, however,
+                //  this should be checked for every time something is changed in the file, and not suddently appear when hovering.
+                vscode.window.showErrorMessage(`Command was opened but never closed! (line: ${++i}, column: ${multilineCommentOpenToken}`);
+                return [-1, undefined];
+            }
+
+            lineText = lineText.substring(0, multilineCommentOpenToken);
+        }
+        if (lineText.indexOf('*/') !== -1) {
+            if (multilineCommentOpenToken === -1) {
+                multilineCommentsOpen++;
+                lineText = lineText.substring(multilineCommentCloseToken + 2);
+            }
+            else
+                lineText = lineText.substring(multilineCommentOpenToken + 2, multilineCommentCloseToken);
+        }
+
+        if (multilineCommentsOpen > 0 || lineText.length === 0) continue;
 
         if (lineText.startsWith('end')) {
             startedOutsideOfLoop = true;
             // Evaluate the number of ticks passing in one loop iteration
             var tickCountInLoop = 0;
             while (!document.lineAt(--i).text.startsWith('repeat') && i >= 0) {
-                const lineText = document.lineAt(i).text;
+                const lineText = document.lineAt(i).text.trim();
+                if (lineText.startsWith('start') || lineText.startsWith('//') || lineText.length === 0) continue;
+
                 tickCountInLoop += +(lineText.substring(1, lineText.indexOf('>')));
             }
 
             // Get the number of iterations of the repeat block
             const iterations = +document.lineAt(i).text.substring(6);
-            tickCount += tickCountInLoop * iterations;
+
+            // Zero iterations => This repeat block is never going to be executed
+            if (iterations !== 0)
+                tickCount += tickCountInLoop * iterations;
             continue;
         }
         else if (lineText.startsWith('repeat')) {
