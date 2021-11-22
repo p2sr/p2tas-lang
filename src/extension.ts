@@ -116,7 +116,7 @@ export function activate(context: vscode.ExtensionContext) {
 // Returns the tick count and the tick count of the start of a repeat block
 // FIXME: This is dumb
 function getTickForLine(line: number, document: vscode.TextDocument): [number, number | undefined] {
-    const targetLine = document.lineAt(line).text;
+    const targetLine = document.lineAt(line).text.trim();
 
     if (targetLine.trim().length !== 0 && !targetLine.startsWith('+'))
         return [+targetLine.substring(0, targetLine.indexOf('>')), undefined];
@@ -156,21 +156,11 @@ function getTickForLine(line: number, document: vscode.TextDocument): [number, n
 
         if (lineText.startsWith('end')) {
             startedOutsideOfLoop = true;
-            // Evaluate the number of ticks passing in one loop iteration
-            var tickCountInLoop = 0;
-            while (!document.lineAt(--i).text.startsWith('repeat') && i >= 0) {
-                const lineText = document.lineAt(i).text.trim();
-                if (lineText.startsWith('start') || lineText.startsWith('//') || lineText.length === 0) continue;
-
-                tickCountInLoop += +(lineText.substring(1, lineText.indexOf('>')));
-            }
-
-            // Get the number of iterations of the repeat block
-            const iterations = +document.lineAt(i).text.substring(6);
-
-            // Zero iterations => This repeat block is never going to be executed
-            if (iterations !== 0)
-                tickCount += tickCountInLoop * iterations;
+            
+            const [ticksPassingInLoop, indexOfRepeatStatement] = getTicksPassingLoop(document, i);
+            // Continue after the loop
+            i = indexOfRepeatStatement;
+            tickCount += ticksPassingInLoop;
             continue;
         }
         else if (lineText.startsWith('repeat')) {
@@ -191,4 +181,33 @@ function getTickForLine(line: number, document: vscode.TextDocument): [number, n
         loopStartTick = tickCount - loopStartTick;
 
     return [tickCount, loopStartTick];
+}
+
+// Params: document: the document in which to search, index: the index of the end line of the repeat block
+// Returns: the number of ticks, the index of the line of the repeat statement that it ended on
+function getTicksPassingLoop(document: vscode.TextDocument, index: number): [number, number] {
+    var tickCountInLoop = 0;
+    while (!document.lineAt(--index).text.trim().startsWith('repeat') && index >= 0) {
+        const lineText = document.lineAt(index).text.trim();
+        if (lineText.startsWith('start') || lineText.startsWith('//') || lineText.length === 0) continue;
+
+        // Nested loop found. Using recursion to get the ticks passing in that loop
+        if (lineText.startsWith('end')) {
+            const [ticksPassing, indexOfRepeatStatement] = getTicksPassingLoop(document, index);
+            index = indexOfRepeatStatement;
+            tickCountInLoop += ticksPassing;
+            continue;
+        }
+
+        tickCountInLoop += +(lineText.substring(1, lineText.indexOf('>')));
+    }
+
+    // Get the number of iterations of the repeat block
+    const iterations = +document.lineAt(index).text.trim().substring(6);
+
+    if (iterations !== 0)
+        return [tickCountInLoop * iterations, index];
+    // Zero iterations => This repeat block is never going to be executed
+    else
+        return [0, index];
 }
