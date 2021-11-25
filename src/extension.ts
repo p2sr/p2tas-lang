@@ -126,32 +126,10 @@ function getTickForLine(line: number, document: vscode.TextDocument): [number, n
     var startedOutsideOfLoop = false;
     var multilineCommentsOpen = 0;
     for (var i = line; i >= 0; i--) {
-        let lineText = document.lineAt(i).text.trim();
+        var lineText = document.lineAt(i).text.trim();
         if (lineText.startsWith('start') || lineText.startsWith('//') || lineText.length === 0) continue;
 
-        const multilineCommentOpenToken = lineText.indexOf('/*');
-        const multilineCommentCloseToken = lineText.indexOf('*/');
-        if (multilineCommentOpenToken !== -1 && multilineCommentCloseToken === -1) {
-            multilineCommentsOpen--;
-            if (multilineCommentsOpen < 0) {
-                // Commment was opened but never closed
-                // FIXME: Show error line under the token. This can be done using a diagnostic collection, however,
-                //  this should be checked for every time something is changed in the file, and not suddently appear when hovering.
-                vscode.window.showErrorMessage(`Command was opened but never closed! (line: ${++i}, column: ${multilineCommentOpenToken}`);
-                return [-1, undefined];
-            }
-
-            lineText = lineText.substring(0, multilineCommentOpenToken);
-        }
-        if (lineText.indexOf('*/') !== -1) {
-            if (multilineCommentOpenToken === -1) {
-                multilineCommentsOpen++;
-                lineText = lineText.substring(multilineCommentCloseToken + 2);
-            }
-            else
-                lineText = lineText.substring(multilineCommentOpenToken + 2, multilineCommentCloseToken);
-        }
-
+        [lineText, multilineCommentsOpen] = withMultilineComments(lineText, multilineCommentsOpen, i);
         if (multilineCommentsOpen > 0 || lineText.length === 0) continue;
 
         if (lineText.startsWith('end')) {
@@ -210,4 +188,31 @@ function getTicksPassingLoop(document: vscode.TextDocument, index: number): [num
     // Zero iterations => This repeat block is never going to be executed
     else
         return [0, index];
+}
+
+function withMultilineComments(lineText: string, multilineCommentsOpen: number, line: number): [string, number] {
+    const multilineCommentOpenToken = lineText.indexOf('/*');
+        const multilineCommentCloseToken = lineText.indexOf('*/');
+        if (multilineCommentOpenToken !== -1 && multilineCommentCloseToken === -1) {
+            multilineCommentsOpen--;
+            if (multilineCommentsOpen < 0) {
+                // Commment was opened but never closed
+                // FIXME: Show error line under the token. This can be done using a diagnostic collection, however,
+                //  this should be checked for every time something is changed in the file, and not suddently appear when hovering.
+                vscode.window.showErrorMessage(`Comment was opened but never closed! (line: ${++line}, column: ${multilineCommentOpenToken})`);
+                return ["", 0];
+            }
+
+            lineText = lineText.substring(0, multilineCommentOpenToken);
+        }
+        if (lineText.indexOf('*/') !== -1) {
+            if (multilineCommentOpenToken === -1) {
+                multilineCommentsOpen++;
+                lineText = lineText.substring(multilineCommentCloseToken + 2);
+            }
+            else
+                lineText = lineText.substring(multilineCommentOpenToken + 2, multilineCommentCloseToken);
+        }
+
+    return [lineText, multilineCommentsOpen];
 }
