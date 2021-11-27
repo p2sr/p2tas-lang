@@ -2,10 +2,6 @@
 
 Syntax highlighting, snippets and autocompletion for the Portal 2 TAS files.
 
-## TODO
-- Add support for `repeat` in the hover and tick insert command
-- Optimise `getTickForLineNumber` so that it only looks for the previous absolute tick, and not recompute from the beginning
-
 ## Release Notes
 ### 0.4.0
 - Added decel tool
