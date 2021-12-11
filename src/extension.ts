@@ -254,7 +254,7 @@ function getToolsForLine(line: number, document: vscode.TextDocument): string[] 
             let amount = lineText.startsWith('+') ? +lineText.substring(1, lineText.indexOf('>')) : undefined;
             decrementCounters((counter) => {
                 if (amount) counter.ticksRemaining -= amount;
-                else counter.ticksRemaining -= counter.totalTicks - (+lineText.substring(0, lineText.indexOf('>')) - counter.startTick);
+                else counter.ticksRemaining = counter.totalTicks - (+lineText.substring(0, lineText.indexOf('>')) - counter.startTick);
             });
         }
 
@@ -269,7 +269,9 @@ function getToolsForLine(line: number, document: vscode.TextDocument): string[] 
                 const args = tool.split(' ');
                 if (args.length < 2) continue;
 
-                if (args[0] === "setang" && args.length === 4) {
+                if (args[0] === "setang") {
+                    if (args.length > 4) continue;
+
                     counters.push(new Counter(result.length, getTickForLine(i, document)[0], +(args[args.length - 1])));
                     result.push(args[0]);
                     continue;
