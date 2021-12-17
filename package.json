@@ -47,7 +47,52 @@
             {
                 "command": "p2tas-lang.relativeFromAbsoluteTick",
                 "title": "Relative tick from absolute tick",
-                "category": "P2-TAS"
+                "category": "p2tas"
+            },
+            {
+                "command": "p2tas-lang.connectSAR",
+                "title": "Connect to SAR through the TCP socket",
+                "category": "p2tas"
+            },
+            {
+                "command": "p2tas-lang.playTAS",
+                "title": "Play the current open TAS.",
+                "category": "p2tas"
+            },
+            {
+                "command": "p2tas-lang.stopTAS",
+                "title": "Stop the current playing TAS.",
+                "category": "p2tas"
+            },
+            {
+                "command": "p2tas-lang.changeRate",
+                "title": "Change TAS playback rate.",
+                "category": "p2tas"
+            },
+            {
+                "command": "p2tas-lang.resumeTAS",
+                "title": "Resume the currently playing TAS",
+                "category": "p2tas"
+            },
+            {
+                "command": "p2tas-lang.pauseTAS",
+                "title": "Pause the current TAS.",
+                "category": "p2tas"
+            },
+            {
+                "command": "p2tas-lang.fastForward",
+                "title": "Fast forward TAS.",
+                "category": "p2tas"
+            },
+            {
+                "command": "p2tas-lang.setNextPauseTick",
+                "title": "Pause TAS at tick.",
+                "category": "p2tas"
+            },
+            {
+                "command": "p2tas-lang.advanceTick",
+                "title": "Tick advance current TAS.",
+                "category": "p2tas"
             }
         ],
         "menus": {
@@ -64,9 +109,30 @@
                 "key": "ctrl+shift+t",
                 "mac": "cmd+shift+t"
             }
-        ]
+        ],
+        "viewsContainers": {
+            "activitybar": [
+                {
+                    "id": "p2tas-sidebar-view",
+                    "title": "TAS integration",
+                    "icon": "images/play.svg"
+                }
+            ]
+        },
+        "views": {
+            "p2tas-sidebar-view": [
+                {
+                    "type": "webview",
+                    "id": "p2tas-sidebar",
+                    "name": "P2-TAS",
+                    "icon": "images/play.svg",
+                    "contextualTitle": "TAS integration"
+                }
+            ]
+        }
     },
     "activationEvents": [
+        "onView:p2tas-sidebar",
         "onLanguage:p2tas",
         "onCommand:p2tas-lang.relativeFromAbsoluteTick"
     ],

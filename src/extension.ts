@@ -1,5 +1,8 @@
-
 import * as vscode from 'vscode';
+import { TASServer } from './TASServer';
+import { TASSidebarProvider } from './sidebar';
+
+export var server: TASServer;
 
 const tokens: { [command: string]: string[]; } = {
     "start": ["now","save","map","next","cm"],
@@ -24,6 +27,8 @@ var activeToolsDisplayDecoration: vscode.DecorationOptions & vscode.DecorationRe
 }
 
 export function activate(context: vscode.ExtensionContext) {
+
+    server = new TASServer();
 
 	const tool_keyword_provider = vscode.languages.registerCompletionItemProvider('p2tas', {
 
@@ -148,6 +153,50 @@ export function activate(context: vscode.ExtensionContext) {
     });
 
     drawActiveToolsDisplay(vscode.window.activeTextEditor!.selection.active, vscode.window.activeTextEditor!.document);
+
+    // --------------------------------------------------------------------------------------------------
+    //                                             Sockets
+    // --------------------------------------------------------------------------------------------------
+
+    vscode.commands.registerCommand("p2tas-lang.connectSAR", () => server.connect());
+    vscode.commands.registerCommand("p2tas-lang.disconnectSAR", () => server.disconnect());
+    vscode.commands.registerCommand("p2tas-lang.playTAS", () => server.requestPlayback());
+    vscode.commands.registerCommand("p2tas-lang.stopTAS", () => server.requestStopPlayback());
+    vscode.commands.registerCommand("p2tas-lang.changeRate", async () => {
+        const input = await vscode.window.showInputBox({ placeHolder: "Desired rate", ignoreFocusOut: true });
+        if (!input) return;
+        const rate = +input;
+        server.requestRatePlayback(rate);
+    });
+    vscode.commands.registerCommand("p2tas-lang.resumeTAS", () => server.requestStatePlaying());
+    vscode.commands.registerCommand("p2tas-lang.pauseTAS", () => server.requestStatePaused());
+    vscode.commands.registerCommand("p2tas-lang.fastForward", async () => {
+        const input = await vscode.window.showInputBox({ placeHolder: "Fast forward to tick", ignoreFocusOut: true });
+        if (!input) return;
+        const tick = +input;
+        server.requestFastForward(tick, false);
+    });
+    vscode.commands.registerCommand("p2tas-lang.setNextPauseTick", async () => {
+        const input = await vscode.window.showInputBox({ placeHolder: "Pause at tick", ignoreFocusOut: true });
+        if (!input) return;
+        const tick = +input;
+        server.requestNextPauseTick(tick);
+    });
+    vscode.commands.registerCommand("p2tas-lang.advanceTick", () => server.requestTickAdvance());
+
+
+    // --------------------------------------------------------------------------------------------------
+    //                                             Sidebar
+    // --------------------------------------------------------------------------------------------------
+
+    const sidebarProvider = new TASSidebarProvider(context.extensionUri, server);
+    context.subscriptions.push(
+      vscode.window.registerWebviewViewProvider(
+        "p2tas-sidebar",
+        sidebarProvider
+      )
+    );
+
 }
 
 function drawActiveToolsDisplay(cursorPos: vscode.Position, document: vscode.TextDocument) {
