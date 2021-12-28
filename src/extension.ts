@@ -319,7 +319,7 @@ function getToolsForLine(line: number, document: vscode.TextDocument): string[] 
                 if (args.length < 2) continue;
 
                 if (args[0] === "setang") {
-                    if (args.length > 4) continue;
+                    if (args.length < 4) continue;
 
                     counters.push(new Counter(result.length, getTickForLine(i, document)[0], +(args[args.length - 1])));
                     result.push(args[0]);
@@ -331,7 +331,7 @@ function getToolsForLine(line: number, document: vscode.TextDocument): string[] 
                     continue;
                 }
                 else if (args[0] === "decel") {
-                    if (result.indexOf(args[0]) === -1)
+                    if (result.indexOf(`(${args[0]})`) === -1)
                         result.push(`(${args[0]})`);
                     continue;
                 }
