@@ -63,7 +63,7 @@
 
     skipButton.addEventListener('click', () => {
         tick = +skipBox.value;
-        vscode.postMessage({ type: 'nextPause', tick:tick  });
+        vscode.postMessage({ type: 'fastForward', tick:tick  });
     });
 
     pauseatButton.addEventListener('click', () => {
