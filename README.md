@@ -3,6 +3,14 @@
 Syntax highlighting, snippets and autocompletion for the Portal 2 TAS files.
 
 ## Release Notes
+### 0.5.0
+- Added active tools display (thanks to david072)
+- Added support for nopitchlock
+- Added integration with in-game playback
+    - Implementation of the tas client protocol
+    - Added commands to control playback
+    - Added sidebar with a sexy UI (based on david072's previous work)
+
 ### 0.4.0
 - Added decel tool
 - Added hover that shows absolute tick when hovering before the `>` in a framebulk (thanks to david072)
