@@ -2,7 +2,7 @@
     "name": "p2tas-lang",
     "displayName": "Portal 2 TAS tools Lang",
     "description": "Syntax highlighting, snippets, autocompletion for the Portal 2 TASing script language",
-    "version": "0.5.2",
+    "version": "0.5.3",
     "publisher": "RainbowwPhoenixx",
     "icon": "images/logo128.png",
     "repository": {
