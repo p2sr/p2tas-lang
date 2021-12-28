@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import * as net from 'net';
 import * as path from 'path';
 import * as fs from 'fs';
+import { platform } from 'process';
 import { TASSidebarProvider } from './sidebar';
 
 export enum TASStatus {
@@ -69,8 +70,15 @@ export class TASServer {
             scriptPath = path.basename(scriptPath);
         } else {
             const tasFolder = fs.realpathSync(path.join(this.gameLocation, "/tas"));
-            // Put everything to lowercase cause windows, and hope for the best on linux
-            if (!scriptPath.toLowerCase().startsWith(tasFolder.toLowerCase())) {
+
+            // On windows, compare lowercase cause shenanigans
+            var condition: boolean;
+            if (platform === 'win32') {
+                condition = !scriptPath.toLowerCase().startsWith(tasFolder.toLowerCase());
+            } else {
+                condition = !scriptPath.startsWith(tasFolder);
+            }
+            if (condition) {
                 vscode.window.showErrorMessage("Failed to play: file is not in the `Portal 2/tas` directory.");
                 return;
             }
