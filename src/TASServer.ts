@@ -68,8 +68,9 @@ export class TASServer {
         if (this.gameLocation === undefined) {
             scriptPath = path.basename(scriptPath);
         } else {
-            const tasFolder = path.join(this.gameLocation, "/tas");
-            if (!scriptPath.startsWith(tasFolder)) {
+            const tasFolder = fs.realpathSync(path.join(this.gameLocation, "/tas"));
+            // Put everything to lowercase cause windows, and hope for the best on linux
+            if (!scriptPath.toLowerCase().startsWith(tasFolder.toLowerCase())) {
                 vscode.window.showErrorMessage("Failed to play: file is not in the `Portal 2/tas` directory.");
                 return;
             }
