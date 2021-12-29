@@ -5,10 +5,10 @@ import { TASSidebarProvider } from './sidebar';
 export var server: TASServer;
 
 const tokens: { [command: string]: string[]; } = {
-    "start": ["now","save","map","next","cm"],
-    "autojump": ["on","off"],
+    "start": ["now", "save", "map", "next", "cm"],
+    "autojump": ["on", "off"],
     "absmov": ["off"],
-    "strafe": ["none","off","vec","ang","veccam","max","keep","forward","forwardvel","left","right","nopitchlock"],
+    "strafe": ["none", "off", "vec", "ang", "veccam", "max", "keep", "forward", "forwardvel", "left", "right", "nopitchlock"],
     "setang": [],
     "autoaim": ["off"],
     "decel": ["off"]
@@ -30,20 +30,20 @@ export function activate(context: vscode.ExtensionContext) {
 
     server = new TASServer();
 
-	const tool_keyword_provider = vscode.languages.registerCompletionItemProvider('p2tas', {
+    const tool_keyword_provider = vscode.languages.registerCompletionItemProvider('p2tas', {
 
-		provideCompletionItems(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken, context: vscode.CompletionContext) {
+        provideCompletionItems(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken, context: vscode.CompletionContext) {
 
             let completionItems = [];
             for (const command in tokens) {
                 completionItems.push(new vscode.CompletionItem(command));
             }
 
-			// return all completion items as array
-			return completionItems;
-		}
-	});
-    
+            // return all completion items as array
+            return completionItems;
+        }
+    });
+
     context.subscriptions.push(tool_keyword_provider);
 
     for (const command in tokens) {
@@ -60,7 +60,7 @@ export function activate(context: vscode.ExtensionContext) {
                     for (const arg_idx in tokens[command]) {
                         completions.push(new vscode.CompletionItem(tokens[command][arg_idx], vscode.CompletionItemKind.Method));
                     }
-    
+
                     return completions;
                 }
             },
@@ -191,10 +191,10 @@ export function activate(context: vscode.ExtensionContext) {
 
     const sidebarProvider = new TASSidebarProvider(context.extensionUri, server);
     context.subscriptions.push(
-      vscode.window.registerWebviewViewProvider(
-        "p2tas-sidebar",
-        sidebarProvider
-      )
+        vscode.window.registerWebviewViewProvider(
+            "p2tas-sidebar",
+            sidebarProvider
+        )
     );
 
 }
@@ -266,9 +266,9 @@ function getToolsForLine(line: number, document: vscode.TextDocument): string[] 
     var repeatDuration = 0;
     for (let i = 0; i <= line; i++) {
         var lineText = document.lineAt(i).text.trim();
-        if (lineText.startsWith('start') || lineText.startsWith('//') || lineText.length === 0) continue;
+        if (lineText.startsWith('start') || lineText.length === 0) continue;
 
-        [lineText, multilineCommentsOpen] = withMultilineComments(lineText, multilineCommentsOpen, i, true);
+        [lineText, multilineCommentsOpen] = withComments(lineText, multilineCommentsOpen, i, true);
         if (multilineCommentsOpen > 0 || lineText.length === 0) continue;
 
         if (lineText.startsWith('repeat')) {
@@ -368,14 +368,14 @@ function getTickForLine(line: number, document: vscode.TextDocument): [number, n
     var multilineCommentsOpen = 0;
     for (var i = line; i >= 0; i--) {
         var lineText = document.lineAt(i).text.trim();
-        if (lineText.startsWith('start') || lineText.startsWith('//') || lineText.length === 0) continue;
+        if (lineText.startsWith('start') || lineText.length === 0) continue;
 
-        [lineText, multilineCommentsOpen] = withMultilineComments(lineText, multilineCommentsOpen, i);
+        [lineText, multilineCommentsOpen] = withComments(lineText, multilineCommentsOpen, i);
         if (multilineCommentsOpen > 0 || lineText.length === 0) continue;
 
         if (lineText.startsWith('end')) {
             startedOutsideOfLoop = true;
-            
+
             const [ticksPassingInLoop, indexOfRepeatStatement] = getTicksPassingLoop(document, i);
             // Continue after the loop
             i = indexOfRepeatStatement;
@@ -406,9 +406,13 @@ function getTickForLine(line: number, document: vscode.TextDocument): [number, n
 // Returns: the number of ticks, the index of the line of the repeat statement that it ended on
 function getTicksPassingLoop(document: vscode.TextDocument, index: number): [number, number] {
     var tickCountInLoop = 0;
+    var multilineCommentsOpen = 0;
     while (!document.lineAt(--index).text.trim().startsWith('repeat') && index >= 0) {
-        const lineText = document.lineAt(index).text.trim();
-        if (lineText.startsWith('start') || lineText.startsWith('//') || lineText.length === 0) continue;
+        var lineText = document.lineAt(index).text.trim();
+        if (lineText.startsWith('start') || lineText.length === 0) continue;
+
+        [lineText, multilineCommentsOpen] = withComments(lineText, multilineCommentsOpen, index);
+        if (multilineCommentsOpen > 0 || lineText.length === 0) continue;
 
         // Nested loop found. Using recursion to get the ticks passing in that loop
         if (lineText.startsWith('end')) {
@@ -431,37 +435,48 @@ function getTicksPassingLoop(document: vscode.TextDocument, index: number): [num
         return [0, index];
 }
 
-function withMultilineComments(lineText: string, multilineCommentsOpen: number, line: number, reversed: Boolean = false): [string, number] {
+function withComments(lineText: string, multilineCommentsOpen: number, line: number, reversed: Boolean = false): [string, number] {
+    // Check for single line comments
+    const singleLineCommentOpenToken = lineText.indexOf('//');
+    if (singleLineCommentOpenToken !== -1) {
+        lineText = lineText.substring(0, singleLineCommentOpenToken);
+        if (lineText.length === 0) {
+            // Only return if the line is empty after removing single line comments. 
+            // Otherwise we want to continue with the multiline comments.
+            return [lineText, multilineCommentsOpen];
+        }
+    }
+
     const multilineCommentOpenToken = lineText.indexOf('/*');
-        const multilineCommentCloseToken = lineText.indexOf('*/');
-        if (multilineCommentOpenToken !== -1 && multilineCommentCloseToken === -1) {
-            // Add one if we're reversed, otherwise subtract one
-            multilineCommentsOpen -= !reversed ? 1 : -1;
-            if (!reversed && multilineCommentsOpen < 0) {
-                // Commment was opened but never closed
-                // FIXME: Show error line under the token. This can be done using a diagnostic collection, however,
-                //  this should be checked for every time something is changed in the file, and not suddently appear when hovering.
-                vscode.window.showErrorMessage(`Comment was opened but never closed! (line: ${++line}, column: ${multilineCommentOpenToken})`);
+    const multilineCommentCloseToken = lineText.indexOf('*/');
+    if (multilineCommentOpenToken !== -1 && multilineCommentCloseToken === -1) {
+        // Add one if we're reversed, otherwise subtract one
+        multilineCommentsOpen -= !reversed ? 1 : -1;
+        if (!reversed && multilineCommentsOpen < 0) {
+            // Commment was opened but never closed
+            // FIXME: Show error line under the token. This can be done using a diagnostic collection, however,
+            //  this should be checked for every time something is changed in the file, and not suddently appear when hovering.
+            vscode.window.showErrorMessage(`Comment was opened but never closed! (line: ${++line}, column: ${multilineCommentOpenToken})`);
+            return ["", 0];
+        }
+
+        lineText = lineText.substring(0, multilineCommentOpenToken);
+    }
+    if (multilineCommentCloseToken !== -1) {
+        if (multilineCommentOpenToken === -1) {
+            // Subtract one if we're reversed, otherwise add one
+            multilineCommentsOpen += !reversed ? 1 : -1;
+            if (reversed && multilineCommentsOpen < 0) {
+                // Comment was closed but never opened. See FIXME above!
+                vscode.window.showErrorMessage(`Comment was closed but never opened! (line: ${++line}, column: ${multilineCommentCloseToken})`);
                 return ["", 0];
             }
 
-            lineText = lineText.substring(0, multilineCommentOpenToken);
+            lineText = lineText.substring(multilineCommentCloseToken + 2);
         }
-        if (lineText.indexOf('*/') !== -1) {
-            if (multilineCommentOpenToken === -1) {
-                // Subtract one if we're reversed, otherwise add one
-                multilineCommentsOpen += !reversed ? 1 : -1;
-                if (reversed && multilineCommentsOpen < 0) {
-                    // Commment was opened but never closed. See FIXME above!
-                    vscode.window.showErrorMessage(`Comment was opened but never closed! (line: ${++line}, column: ${multilineCommentCloseToken})`);
-                    return ["", 0];
-                }
-
-                lineText = lineText.substring(multilineCommentCloseToken + 2);
-            }
-            else
-                lineText = lineText.substring(multilineCommentOpenToken + 2, multilineCommentCloseToken);
-        }
+        else
+            lineText = lineText.substring(0, multilineCommentOpenToken) + lineText.substring(multilineCommentCloseToken + 2);
+    }
 
     return [lineText, multilineCommentsOpen];
 }
