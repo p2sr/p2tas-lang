@@ -4,6 +4,8 @@
 (function () {
     const vscode = acquireVsCodeApi();
 
+    const defaultButtonBackground = getComputedStyle((document.querySelector(":root"))).getPropertyValue("--vscode-button-background");
+
     const socketStatusText = (document.getElementById("status"));
 
     const dataStatusText = document.getElementById("data-status");
@@ -41,7 +43,6 @@
     });
 
     pauseButton.addEventListener('click', () => {
-        // TODO: grey out button when inactive
         if (dataStatusText.innerText === "Playing") {
             vscode.postMessage({ type: 'pauseTAS' });
         } else if (dataStatusText.innerText === "Paused") {
@@ -50,25 +51,22 @@
     });
 
     tickAdvanceButton.addEventListener('click', () => {
-        // TODO: grey out button when not paused
-        // if (dataStatusText.innerText === "Paused") {
-            vscode.postMessage({ type: 'tickAdvance' });
-        // }
+        vscode.postMessage({ type: 'tickAdvance' });
     });
 
     rateButton.addEventListener('click', () => {
         rate = +rateBox.value;
-        vscode.postMessage({ type: 'changeRate', rate:rate });
+        vscode.postMessage({ type: 'changeRate', rate: rate });
     });
 
     skipButton.addEventListener('click', () => {
         tick = +skipBox.value;
-        vscode.postMessage({ type: 'fastForward', tick:tick  });
+        vscode.postMessage({ type: 'fastForward', tick: tick });
     });
 
     pauseatButton.addEventListener('click', () => {
         tick = +pauseatBox.value;
-        vscode.postMessage({ type: 'nextPause', tick:tick  });
+        vscode.postMessage({ type: 'nextPause', tick: tick });
     });
 
     // Attempt to restore state
@@ -106,24 +104,42 @@
             case "Inactive":
                 playButton.innerText = "Play TAS";
                 pauseButton.innerText = "Pause TAS";
-                // TODO: grey out pause button
+
+                pauseButton.disabled = true;
+                pauseButton.style.backgroundColor = "#444444";
+                tickAdvanceButton.disabled = true;
+                tickAdvanceButton.style.backgroundColor = "#444444";
                 break;
 
             case "Playing":
                 playButton.innerText = "Stop TAS";
                 pauseButton.innerText = "Pause TAS";
+
+                pauseButton.disabled = false;
+                pauseButton.style.background = defaultButtonBackground;
+                tickAdvanceButton.disabled = true;
+                tickAdvanceButton.style.backgroundColor = "#444444";
                 break;
 
             case "Paused":
                 playButton.innerText = "Stop TAS";
                 pauseButton.innerText = "Resume TAS";
+
+                pauseButton.disabled = false;
+                pauseButton.style.background = defaultButtonBackground;
+                tickAdvanceButton.disabled = false;
+                tickAdvanceButton.style.backgroundColor = defaultButtonBackground;
                 break;
 
             case "Skipping":
                 playButton.innerText = "Stop TAS";
                 pauseButton.innerText = "Pause TAS";
+
+                pauseButton.disabled = false;
+                pauseButton.style.background = defaultButtonBackground;
+                tickAdvanceButton.disabled = true;
+                tickAdvanceButton.style.backgroundColor = "#444444";
                 break;
         }
     }
-
 }())
