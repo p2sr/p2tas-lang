@@ -4,12 +4,6 @@ import { TASServer, TASStatus } from './TASServer';
 export class TASSidebarProvider implements vscode.WebviewViewProvider {
     _view?: vscode.WebviewView;
     server: TASServer;
-    last_message = {
-        connected: false,
-        state: "Inactive",
-        rate: 1.0,
-        currentTick: 0
-    };
 
     constructor(private readonly _extensionUri: vscode.Uri, server_: TASServer) {
         this.server = server_;
@@ -68,6 +62,8 @@ export class TASSidebarProvider implements vscode.WebviewViewProvider {
                     break;
 			}
 		});
+
+        this._view?.webview.postMessage({reset: 1});
     }
 
     private _getHtmlForWebview(webview: vscode.Webview) {
@@ -141,7 +137,6 @@ export class TASSidebarProvider implements vscode.WebviewViewProvider {
             currentTick: this.server.currentTick
         };
         this._view?.webview.postMessage(message);
-        this.last_message = message;
     }
 }
 

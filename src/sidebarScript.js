@@ -82,6 +82,16 @@
     });
 
     function handleMessage(message) {
+        // Reset UI
+        if (message.reset === null) {
+            socketStatusText.style.color = "red";
+            socketStatusText.innerText = "Disconnected";
+            connectButton.innerText = "Connect";
+            dataDiv.style.display = "none";
+            buttonsDiv.style.display = "none";
+            return;
+        }
+
         if (message.connected) {
             socketStatusText.style.color = "green";
             socketStatusText.innerText = "Connected";
