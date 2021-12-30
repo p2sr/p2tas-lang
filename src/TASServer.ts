@@ -30,7 +30,8 @@ export class TASServer {
     }
 
     connect() {
-        // TODO: check if we're already connected
+        if (this.connected) return;
+
         this.socket.connect(TASServer.port, TASServer.host, () => {
             vscode.window.showInformationMessage("Successfully connected to SAR!");
             this.connected = true;
