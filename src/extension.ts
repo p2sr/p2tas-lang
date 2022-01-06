@@ -340,6 +340,8 @@ function getToolsForLine(line: number, document: vscode.TextDocument): string[] 
                 else if (args[0] === "decel") {
                     if (result.indexOf(`(${args[0]})`) === -1)
                         result.push(`(${args[0]})`);
+                    else if (args[1] === "off")
+                        removeResult(result.indexOf(`(${args[0]})`));
                     continue;
                 }
 
