@@ -321,14 +321,21 @@ function getToolsForLine(line: number, document: vscode.TextDocument): string[] 
                 if (args[0] === "setang") {
                     if (args.length < 4) continue;
 
-                    counters.push(new Counter(result.length, getTickForLine(i, document)[0], +(args[args.length - 1])));
+                    const ticks = +(args[args.length - 1]);
+                    if (isNaN(ticks))
+                        continue;
+
+                    counters.push(new Counter(result.length, getTickForLine(i, document)[0], ticks));
                     result.push(args[0]);
                     continue;
                 }
                 else if (args[0] === "autoaim" && args.length === 5) {
-                    counters.push(new Counter(result.length, getTickForLine(i, document)[0], +(args[args.length - 1])));
-                    result.push(args[0]);
-                    continue;
+                    const ticks = +(args[args.length - 1]);
+                    if (!isNaN(ticks)) {
+                        counters.push(new Counter(result.length, getTickForLine(i, document)[0], ticks));
+                        result.push(args[0]);
+                        continue;
+                    }
                 }
                 else if (args[0] === "decel") {
                     if (result.indexOf(`(${args[0]})`) === -1)
