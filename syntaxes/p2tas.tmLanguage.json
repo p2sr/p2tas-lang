@@ -20,7 +20,7 @@
 			},
 			{
 				"name": "variable.parameter",
-				"match": "\\b(on|off|none|vec|ang|veccam|max|keep|forward|forwardvel|left|right)\\b"
+				"match": "\\b(on|off|none|vec|ang|veccam|max|keep|forward|forwardvel|left|right|nopitchlock)\\b"
 			},
 			{
 				"name": "ups_or_deg",
