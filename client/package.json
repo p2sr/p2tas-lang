@@ -1,0 +1,20 @@
+{
+	"name": "p2tas-client",
+	"description": "The p2tas extension.",
+	"author": "RainbowwPhoenixx",
+	"version": "0.5.3",
+	"publisher": "RainbowwPhoenixx",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/RainbowwPhoenixx/p2tas-lang"
+	},
+	"engines": {
+		"vscode": "^1.52.0"
+	},
+	"dependencies": {
+		"vscode-languageclient": "^7.0.0"
+	},
+	"devDependencies": {
+		"@types/vscode": "^1.52.0"
+	}
+}
