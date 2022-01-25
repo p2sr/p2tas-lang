@@ -1,4 +1,4 @@
-import { Diagnostic, DiagnosticSeverity, Position, Range } from "vscode-languageserver/node";
+import { DiagnosticSeverity } from "vscode-languageserver/node";
 import { TASTool } from "./tasTool";
 import { DiagnosticCollector, startTypes } from "./util";
 
@@ -17,7 +17,7 @@ export class ScriptLine {
 
     // Comments
     isComment: boolean = false;
-    multilineCommentStart?: number;
+    commentStart?: number;
     multilineCommentEnd?: number;
 
     constructor(
@@ -40,19 +40,19 @@ export class ScriptLine {
 
         if (isComment)
             this.isComment = isComment;
-        this.multilineCommentStart = multilineCommentStart;
+        this.commentStart = multilineCommentStart;
         this.multilineCommentEnd = multilineCommentEnd;
     }
 
     mergeComments(otherLine: ScriptLine) {
         this.isComment = otherLine.isComment;
-        this.multilineCommentStart = otherLine.multilineCommentStart;
+        this.commentStart = otherLine.commentStart;
         this.multilineCommentEnd = otherLine.multilineCommentEnd;
     }
 }
 
-export function scriptLineComment(lineText: string = "", isComment: boolean = true, multilineCommentStart?: number, multilineCommentEnd?: number): ScriptLine {
-    return new ScriptLine(lineText, LineType.Comment, 0, 0, [], isComment, multilineCommentStart, multilineCommentEnd);
+export function scriptLineComment(lineText: string = "", isComment: boolean = true, commentStart?: number, multilineCommentEnd?: number): ScriptLine {
+    return new ScriptLine(lineText, LineType.Comment, 0, 0, [], isComment, commentStart, multilineCommentEnd);
 }
 
 export function createScriptLine(type: LineType, lineText: string, line: number, previousLine: ScriptLine | undefined, collector: DiagnosticCollector): ScriptLine {
@@ -70,22 +70,40 @@ export function createScriptLine(type: LineType, lineText: string, line: number,
     }
 }
 
-function getParts(text: string): [string[], number] {
-    return [text.trim().split(' '), text.match(/\S/)?.index || 0];
+// Returns: 
+// - the text parts (trimmed, splitted on ' ')
+// - the first non-whitespace character index
+// - the last non-whitespace character index
+function getParts(text: string): [string[], number, number] {
+    return [text.trim().split(' '), text.match(/\S/)?.index || 0, text.match(/\S(?=\s*$)/)?.index || text.length - 1];
 }
 
 function parseStartStatement(lineText: string, line: number, collector: DiagnosticCollector): ScriptLine {
-    const [args, firstCharacter] = getParts(lineText);
+    const [args, firstCharacter, lastCharacter] = getParts(lineText);
 
     if (args.length < 2) {
-        collector.addDiagnosticToLine(line, lineText.length - 1, "Expected start type");
+        collector.addDiagnosticToLine(line, lastCharacter, "Expected start type");
     }
-    else if (args.length > 2) {
-        collector.addDiagnosticToLine(line, firstCharacter + args[0].length + args[1].length + 2, "Ignored start parameters", DiagnosticSeverity.Warning);
-    }
-    else {
-        const valid = startTypes.map((type) => type.name).includes(args[1]);
-        if (!valid) collector.addDiagnosticToLine(line, firstCharacter + args[0].length + 1, "Invalid start type");
+    else if (args.length >= 2) {
+        const startType = startTypes[args[1]];
+        if (startType) {
+            if (!(startType.hasArgument || false)) {
+                if (args.length > 2) {
+                    collector.addDiagnosticToLine(line, firstCharacter + args[0].length + args[1].length + 2, "Ignored start parameters", DiagnosticSeverity.Warning);
+                }
+            }
+            else {
+                if (args.length > 3) {
+                    collector.addDiagnosticToLine(line, firstCharacter + args[0].length + args[1].length + args[2].length + 3, "Ignored start parameters", DiagnosticSeverity.Warning);
+                }
+                else if (args.length === 2) {
+                    collector.addDiagnosticToLine(line, lastCharacter, "Expected argument");
+                }
+            }
+        }
+        else {
+            collector.addDiagnosticToLine(line, firstCharacter + args[0].length + 1, "Invalid start type");
+        }
     }
 
     return new ScriptLine(lineText, LineType.Start, -1);
@@ -142,7 +160,7 @@ function parseFramebulk(lineText: string, line: number, previousLine: ScriptLine
         return new ScriptLine(lineText, LineType.Framebulk, currentTick, isRelative ? tick : undefined, previousLine.activeTools);
     }
 
-    let activeTools: TASTool.Tool[] = [];
+    let activeTools: TASTool.Tool[] = previousLine.activeTools;
     for (let component = 0; component < 5; component++) {
         switch (component) {
             case 0:
@@ -157,7 +175,6 @@ function parseFramebulk(lineText: string, line: number, previousLine: ScriptLine
                 if (lineText.split("|").length - 1 === 4) {
                     [lastPipe, activeTools] = parseTools(lineText, line, currentTick, lineText.lastIndexOf('|'), previousLine, collector);
                 }
-                else activeTools = previousLine.activeTools;
                 break;
             default:
                 continue;
@@ -177,7 +194,7 @@ function parseFramebulkTick(lineText: string, line: number, previousLine: Script
 
     if (trimmedText.startsWith('+')) {
         if (!/^\+\d.*$/.test(trimmedText)) {
-            collector.addDiagnostic(line, firstCharacter, 0, "Expected integer after '+'");
+            collector.addDiagnostic(line, firstCharacter, firstCharacter + 1, "Expected integer after '+'");
         }
 
         if (!/^\+\d*>.*$/.test(trimmedText)) {
@@ -190,9 +207,11 @@ function parseFramebulkTick(lineText: string, line: number, previousLine: Script
             collector.addDiagnostic(line, 0, firstCharacter + arrow, "Expected positive tick delta");
         }
 
-        // TODO: Test here if it's the first tick in the file
+        if (previousLine.absoluteTick === -1) {
+            collector.addDiagnosticToLine(line, firstCharacter, "First framebulk in file is relative");
+        }
 
-        return [tick, true];
+        return [previousLine.absoluteTick === -1 ? tick + 1 : tick, true];
     }
     else if (/^\d.*$/.test(trimmedText)) { // checks if `lineText` starts with a number
         if (!/^\d*>.*$/.test(trimmedText)) {
@@ -252,6 +271,7 @@ function parseButtons(lineText: string, line: number, startIndex: number, collec
 
     for (let i = startIndex; i < pipe; i++) {
         let button = lineText.charAt(i);
+        if (button === ' ') continue;
 
         let wasUpper = false;
         if (button >= 'A' && button <= 'Z') {
@@ -262,8 +282,7 @@ function parseButtons(lineText: string, line: number, startIndex: number, collec
         if (!(button >= 'a' && button <= 'z')) {
             collector.addDiagnostic(line, i, i + 1, "Expected letter");
         }
-
-        if (!/^[jduzbo].*$/.test(button)) {
+        else if (!/^[jduzbo].*$/.test(button)) {
             collector.addDiagnostic(line, i, i + 1, "Invalid button character");
         }
 
@@ -271,10 +290,15 @@ function parseButtons(lineText: string, line: number, startIndex: number, collec
             if (!isNaN(+lineText.charAt(i + 1))) {
                 let durationStr = "";
                 i++;
+                // Put all following numbers into durationStr
                 while (i < pipe) {
                     const char = lineText.charAt(i);
                     if (/^\d$/.test(char)) durationStr += char;
-                    else break;
+                    else {
+                        // Need to decrement i again, since the outer loop will increment i for us
+                        i--;
+                        break;
+                    }
                     i++;
                 }
 
@@ -292,24 +316,26 @@ function parseTools(lineText: string, line: number, currentTick: number, startIn
     // These functions use the variables defined in the outer function, and are called from below code
 
     // validateToolArgument validates the tool argument and changes didFindOffArg to true if needed
-    function validateToolArgument(index: number) {
+    function validateToolArgument(toolName: string, arg: string, index: number, firstCharacter: number): boolean {
         const toolArg = TASTool.getToolArgument(toolName, arg);
         if (!toolArg) {
-            collector.addDiagnostic(line, index - arg.length, index, `Tool '${toolName}' does not have argument '${arg}'`);
-            return;
+            collector.addDiagnostic(line, index + firstCharacter, index + arg.length, `Tool '${toolName}' does not have argument '${arg}'`);
+            return false;
         }
 
-        if (toolArg && toolArg.type === TASTool.ToolArgumentType.Off) {
-            didFindOffArg = true;
-        }
+        // didFindOffArg
+        return toolArg && toolArg.type === TASTool.ToolArgumentType.Off;
     }
 
-    function handleToolArgument() {
-        if (didFindOffArg) {
-            const index = activeTools.findIndex((tasTool) => tasTool.tool === (toolName === "decel" ? "(decel)" : toolName))
+    function updateActiveTools(toolName: string, didFindOffArg: boolean, argumentsGiven: string[]) {
+        // Ensure that all occurrences are removed
+        let index = activeTools.findIndex((tasTool) => tasTool.tool === (toolName === "decel" ? "(decel)" : toolName));
+        while (index !== -1) {
             activeTools.splice(index, 1);
+            index = activeTools.findIndex((tasTool) => tasTool.tool === (toolName === "decel" ? "(decel)" : toolName));
         }
-        else {
+
+        if (!didFindOffArg) {
             if (toolName === "decel")
                 activeTools.push(new TASTool.Tool("(decel)"));
             else {
@@ -327,74 +353,47 @@ function parseTools(lineText: string, line: number, currentTick: number, startIn
     // activeTools would otherwise be a reference
     const activeTools = previousLine.activeTools.map((elem) => elem.copy());
 
-    let toolName = "";
-    let toolArguments: TASTool.ToolArgument[] | undefined;
-    let argumentsGiven: string[] = [];
-    let arg = "";
-    let foundTool = false;
-    let didFindOffArg = false;
-    for (let i = startIndex + 1; i < lineText.length; i++) {
-        const char = lineText.charAt(i);
-        if (!foundTool) {
-            if (char === ' ') {
-                if (toolName.length === 0) continue;
+    let index = startIndex + 1;
+    lineText.substring(startIndex + 1).split(';').forEach(toolDecl => {
+        toolDecl = toolDecl.trim();
+        if (toolDecl.length === 0) return;
+        const [parts, firstCharacter, lastCharacter] = getParts(toolDecl);
 
+        let toolName = "";
+        let argumentsGiven: string[] = [];
+        let foundTool = false;
+        let didFindOffArg = false;
+
+        for (let i = 0; i < parts.length; i++) {
+            const part = parts[i];
+            if (!foundTool) {
+                toolName = part;
                 if (!TASTool.tools.hasOwnProperty(toolName)) {
-                    collector.addDiagnostic(line, i - toolName.length, i, `Tool '${toolName}' does not exist`);
+                    collector.addDiagnostic(line, index + firstCharacter, index + lastCharacter + 1, `Tool '${toolName}' does not exist`);
 
                     toolName = "";
-                    // Fast forward to the ';'
-                    while (i < lineText.length && lineText.charAt(++i) !== ';');
-                    continue;
+                    return;
                 }
                 foundTool = true;
-                toolArguments = TASTool.tools[toolName].arguments;
-
-                continue;
+            }
+            else {
+                const arg = part.trim();
+                didFindOffArg = validateToolArgument(toolName, arg, index, firstCharacter);
+                argumentsGiven.push(arg);
             }
 
-            toolName += char;
-            continue;
+            index += part.length;
+            if (i < parts.length - 1) index++;
         }
 
-        if (char === ' ') {
-            if (arg.length === 0) continue;
-
-            arg = arg.trim();
-            validateToolArgument(i);
-            argumentsGiven.push(arg);
-            arg = "";
-            continue;
-        }
-        else if (char === ';') {
-            arg = arg.trim();
-            validateToolArgument(i);
-            argumentsGiven.push(arg);
-            arg = "";
-
-            handleToolArgument();
-
-            toolName = "";
-            foundTool = false;
-            toolArguments = undefined;
-            didFindOffArg = false;
-            argumentsGiven = [];
-
-            continue;
+        updateActiveTools(toolName, didFindOffArg, argumentsGiven);
+        if (argumentsGiven.length === 0) {
+            collector.addDiagnosticToLine(line, index + lastCharacter - 1, "Expected arguments");
         }
 
-        arg += char;
-    }
-
-    // The end of the line was reached, so the last argument might not have been parsed
-    if (arg.length > 0) {
-        arg = arg.trim();
-        validateToolArgument(lineText.length);
-        argumentsGiven.push(arg);
-        arg = "";
-
-        handleToolArgument();
-    }
+        index += 1;
+        while (lineText.charAt(++index) === ' ' && index < lineText.length);
+    });
 
     return [lineText.length, activeTools];
 }

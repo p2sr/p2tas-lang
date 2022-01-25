@@ -30,7 +30,7 @@ connection.onInitialize((params: InitializeParams) => {
 });
 
 connection.onDidOpenTextDocument((params) => {
-	const tasScript = new TASScript(params.textDocument.uri);
+	const tasScript = new TASScript();
 	const diagnostics = tasScript.parse(params.textDocument.text);
 	connection.sendDiagnostics({ uri: params.textDocument.uri, diagnostics });
 
@@ -64,7 +64,8 @@ connection.onCompletion((params: TextDocumentPositionParams): CompletionItem[] =
 		}
 	}
 
-	if (!(isInFirstLine || isInFirstLine) && params.position.character <= lineText.lastIndexOf('|') || line.isComment) return [];
+	const isComment = (line.isComment && params.position.character > (line.commentStart || 0));
+	if (!(isInFirstLine || isInFirstLine) && params.position.character <= lineText.lastIndexOf('|') || isComment) return [];
 
 	const [_, requestedToolName, toolArguments, completeTool] = getToolAndArgumentAtPosition(params.position.character, lineText);
 
@@ -101,11 +102,12 @@ connection.onCompletion((params: TextDocumentPositionParams): CompletionItem[] =
 	else {
 		if (isInFirstLine) {
 			if (requestedToolName === "start") {
-				return startTypes.map((arg) => {
+				if (toolArguments.length !== 0) return [];
+				return Object.entries(startTypes).map(arg => {
 					return {
-						label: arg.name,
+						label: arg[0],
 						kind: CompletionItemKind.Field,
-						documentation: arg.description
+						documentation: arg[1].description
 					};
 				});
 			}
@@ -178,7 +180,8 @@ function getToolAndArgumentAtPosition(character: number, lineText: string): [str
 
 			if (didCompleteHoveredWord) {
 				if (lineText.charAt(index + 1) === ' ') {
-					encounteredWords.push(requestedToolName);
+					if (requestedToolName.length !== 0)
+						encounteredWords.push(requestedToolName);
 					requestedToolName = char;
 				}
 				else requestedToolName = char + requestedToolName;
@@ -198,8 +201,8 @@ connection.onHover((params, cancellationToken, workDoneProgressReporter, resultP
 
 	const line = script.lines[params.position.line];
 	const lineText = line.lineText;
-	// Check if the cursor is before the '>' and the line is not a comment
-	if (line.isComment) return undefined;
+	// Check if the cursor is before the '>' and before any comments
+	if (line.isComment && params.position.character > (line.commentStart || 0)) return undefined;
 
 	if (params.position.character < lineText.indexOf('>')) {
 		// Return tick count

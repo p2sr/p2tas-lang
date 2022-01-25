@@ -23,15 +23,36 @@ export class DiagnosticCollector {
     }
 }
 
-export type CompletionItemDeclaration = { name: string, description: string };
+export interface StartTypes {
+    [name: string]: StartType
+};
 
-export const startTypes: CompletionItemDeclaration[] = [
-    { name: "map", description: "Starts playing the TAS after loading into the given map." },
-    { name: "save", description: "Starts playing the TAS after loading the given save." },
-    { name: "cm", description: "Starts playing the TAS after loading into the given map, but in Challenge Mode." },
-    { name: "now", description: "Starts playing the TAS immediately, or as soon as a session is started." },
-    { name: "next", description: "Starts playing the TAS on the next session start." }
-];
+export type StartType = {
+    hasArgument?: boolean,
+    description: string,
+};
+
+export const startTypes: StartTypes = {
+    map: {
+        hasArgument: true,
+        description: "Starts playing the TAS after loading into the given map."
+    },
+    save: {
+        hasArgument: true,
+        description: "Starts playing the TAS after loading the given save."
+    },
+    cm: {
+        description: "Starts playing the TAS after loading into the given map, but in Challenge Mode."
+    },
+    now: {
+        description: "Starts playing the TAS immediately, or as soon as a session is started."
+    },
+    next: {
+        description: "Starts playing the TAS on the next session start."
+    }
+}
+
+export type CompletionItemDeclaration = { name: string, description: string };
 
 export const startCompletion: CompletionItemDeclaration = { name: "start", description: "**Syntax:** ```start <map|save|cm|now|next>```\n\nDefines how the TAS should start. Must be the first statement in a script." };
 export const repeatCompletion: CompletionItemDeclaration = { name: "repeat", description: "**Syntax:** ```repeat [iterations]```\n\nMarks the start of a loop that repeats [iterations] times." };

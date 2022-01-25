@@ -161,13 +161,11 @@ export function activate(context: vscode.ExtensionContext) {
 
 async function drawActiveToolsDisplay(cursorPos: vscode.Position, document: vscode.TextDocument) {
     const tools: string = await client.sendRequest("p2tas/activeTools", [document.uri, cursorPos.line]);
-    if (tools.length == 0) return;
-
     activeToolsDisplayDecoration = {
         range: new vscode.Range(cursorPos, document.lineAt(cursorPos.line).range.end),
         renderOptions: {
             after: {
-                contentText: `Active tools: ${tools}`,
+                contentText: tools.length > 0 ? `Active tools: ${tools}` : "",
                 textDecoration: ";font-size:11px",
                 fontWeight: ";font-weight:lighter"
             }
