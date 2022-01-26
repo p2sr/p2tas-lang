@@ -22,7 +22,7 @@ export class TASSidebarProvider implements vscode.WebviewViewProvider {
 			enableScripts: true,
 			localResourceRoots: [
                 vscode.Uri.joinPath(this._extensionUri, "css"),
-                vscode.Uri.joinPath(this._extensionUri, "src")
+                vscode.Uri.joinPath(this._extensionUri, "client", "src")
             ]
 		};
 
@@ -76,7 +76,7 @@ export class TASSidebarProvider implements vscode.WebviewViewProvider {
         );
 
         const scriptUri = webview.asWebviewUri(
-            vscode.Uri.joinPath(this._extensionUri, "src", "sidebarScript.js")
+            vscode.Uri.joinPath(this._extensionUri, "client", "src", "sidebarScript.js")
         );
 
         // Use a nonce to only allow a specific script to be run.
