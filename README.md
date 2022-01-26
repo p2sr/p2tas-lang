@@ -3,6 +3,12 @@
 Syntax highlighting, snippets and autocompletion for the Portal 2 TAS files.
 
 ## Release Notes
+### 1.0.0
+- Added language server (thanks to david072)
+    - Provides errors and warnings
+    - Provides better completion
+    - Provides documentation hovers
+
 ### 0.5.0
 - Added active tools display (thanks to david072)
 - Added support for nopitchlock
