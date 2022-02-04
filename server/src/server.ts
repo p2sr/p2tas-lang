@@ -58,13 +58,23 @@ connection.onCompletion((params: TextDocumentPositionParams): CompletionItem[] =
 	let isInFirstLine = false;
 	isStartOfLine = params.position.character === 0;
 	for (const scriptLine of script.lines) {
-		if (!scriptLine.isComment) {
-			if (scriptLine === line) isInFirstLine = true;
-			break;
+		if (scriptLine.commentRange) {
+			if (scriptLine.commentRange.isWholeLine) continue;
+			else {
+				if (scriptLine === line) {
+					if (scriptLine.commentRange.containsPos(params.position)) return [];
+					isInFirstLine = true;
+					break;
+				}
+				else break;
+			}
 		}
+
+		if (scriptLine === line) isInFirstLine = true;
+		break;
 	}
 
-	const isComment = (line.isComment && params.position.character > (line.commentStart || 0));
+	const isComment = line.commentRange && line.commentRange.containsPos(params.position);
 	if (!(isInFirstLine || isInFirstLine) && params.position.character <= lineText.lastIndexOf('|') || isComment) return [];
 
 	const [_, requestedToolName, toolArguments, completeTool] = getToolAndArgumentAtPosition(params.position.character, lineText);
@@ -201,7 +211,7 @@ connection.onHover((params, cancellationToken, workDoneProgressReporter, resultP
 	const line = script.lines[params.position.line];
 	const lineText = line.lineText;
 	// Check if the cursor is before the '>' and before any comments
-	if (line.isComment && params.position.character > (line.commentStart || 0)) return undefined;
+	if (line.commentRange && line.commentRange.containsPos(params.position)) return undefined;
 
 	if (params.position.character < lineText.indexOf('>')) {
 		// Return tick count

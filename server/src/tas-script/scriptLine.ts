@@ -1,6 +1,6 @@
 import { DiagnosticSeverity } from "vscode-languageserver/node";
 import { TASTool } from "./tasTool";
-import { DiagnosticCollector, startTypes } from "./util";
+import { CommentRange, DiagnosticCollector, startTypes } from "./util";
 
 export enum LineType {
     Start, RepeatStart, End, Framebulk, Comment
@@ -16,9 +16,7 @@ export class ScriptLine {
     activeTools: TASTool.Tool[];
 
     // Comments
-    isComment: boolean = false;
-    commentStart?: number;
-    multilineCommentEnd?: number;
+    commentRange?: CommentRange = undefined;
 
     constructor(
         lineText: string,
@@ -26,9 +24,7 @@ export class ScriptLine {
         absoluteTick: number,
         relativeTick?: number,
         activeTools?: TASTool.Tool[],
-        isComment?: boolean,
-        multilineCommentStart?: number,
-        multilineCommentEnd?: number
+        commentRange?: CommentRange,
     ) {
         this.lineText = lineText;
 
@@ -38,21 +34,8 @@ export class ScriptLine {
 
         this.activeTools = activeTools || [];
 
-        if (isComment)
-            this.isComment = isComment;
-        this.commentStart = multilineCommentStart;
-        this.multilineCommentEnd = multilineCommentEnd;
+        this.commentRange = commentRange;
     }
-
-    mergeComments(otherLine: ScriptLine) {
-        this.isComment = otherLine.isComment;
-        this.commentStart = otherLine.commentStart;
-        this.multilineCommentEnd = otherLine.multilineCommentEnd;
-    }
-}
-
-export function scriptLineComment(lineText: string = "", isComment: boolean = true, commentStart?: number, multilineCommentEnd?: number): ScriptLine {
-    return new ScriptLine(lineText, LineType.Comment, 0, 0, [], isComment, commentStart, multilineCommentEnd);
 }
 
 export function createScriptLine(type: LineType, lineText: string, line: number, previousLine: ScriptLine | undefined, collector: DiagnosticCollector): ScriptLine {

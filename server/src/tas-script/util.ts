@@ -1,4 +1,4 @@
-import { Diagnostic, DiagnosticSeverity } from "vscode-languageserver/node";
+import { Diagnostic, DiagnosticSeverity, Position } from "vscode-languageserver/node";
 
 export class DiagnosticCollector {
     private diagnostics: Diagnostic[] = [];
@@ -20,6 +20,22 @@ export class DiagnosticCollector {
 
     getDiagnostics(): Diagnostic[] {
         return this.diagnostics;
+    }
+}
+
+export class CommentRange {
+    start: number;
+    end: number;
+    isWholeLine: boolean;
+
+    constructor(start: number, end: number, isWholeLine: boolean = false) {
+        this.start = start;
+        this.end = end;
+        this.isWholeLine = isWholeLine;
+    }
+
+    containsPos(pos: Position): boolean {
+        return pos.character >= this.start && pos.character <= this.end;
     }
 }
 

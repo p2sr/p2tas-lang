@@ -1,6 +1,6 @@
-import { CompletionList, Diagnostic, DiagnosticSeverity, Position, Range, TextDocumentContentChangeEvent } from "vscode-languageserver";
-import { scriptLineComment, createScriptLine, LineType, ScriptLine } from "./scriptLine";
-import { DiagnosticCollector } from "./util";
+import { Diagnostic } from "vscode-languageserver";
+import { createScriptLine, LineType, ScriptLine } from "./scriptLine";
+import { DiagnosticCollector, CommentRange } from "./util";
 
 export class TASScript {
     lines: ScriptLine[] = [];
@@ -17,34 +17,25 @@ export class TASScript {
         // Stores the iterations, the tick count of the 'repeat' line and the line of the repeat statement
         let repeats: [number, number, number][] = [];
         while (index <= fileText.length) {
-            let lineText = "";
+            let fullLineText = "";
             while (fileText.charAt(index) !== '\n' && index < fileText.length) {
                 const char = fileText.charAt(index);
                 if (char !== '\r')
-                    lineText += char;
+                    fullLineText += char;
                 index++;
             }
+            index++;
+
+            let lineText: string;
+            let commentRange: CommentRange | undefined;
+            [lineText, multilineCommentsOpen, commentRange] = this.removeComments(fullLineText, currentLine, multilineCommentsOpen, diagnosticCollector);
 
             const trimmedLineText = lineText.trim();
 
-            index++;
-
-            let commentLine: ScriptLine;
-            [lineText, multilineCommentsOpen, commentLine] = this.removeComments(lineText, currentLine, multilineCommentsOpen, diagnosticCollector);
-
-            let previousLine = scriptLineComment("", false);
-            for (let i = this.lines.length - 1; i >= 0; i--) {
-                if (!this.lines[i].isComment) {
-                    previousLine = this.lines[i];
-                    break;
-                }
-            }
+            let previousLine = this.lines.length === 0 ? new ScriptLine("", LineType.Framebulk, 0) : this.lines[this.lines.length - 1];
 
             if (lineText.length === 0) {
-                commentLine.activeTools = previousLine.activeTools;
-                commentLine.absoluteTick = previousLine.absoluteTick;
-                this.lines.push(commentLine);
-
+                this.lines.push(new ScriptLine(fullLineText, LineType.Comment, previousLine.absoluteTick, undefined, previousLine.activeTools, commentRange));
                 currentLine++;
                 continue;
             }
@@ -55,7 +46,7 @@ export class TASScript {
                 }
                 else {
                     const line = createScriptLine(LineType.Start, lineText, currentLine, previousLine, diagnosticCollector);
-                    if (commentLine) line.mergeComments(commentLine)
+                    line.commentRange = commentRange;
                     this.lines.push(line);
                 }
 
@@ -103,7 +94,7 @@ export class TASScript {
             }
 
             const line = createScriptLine(LineType.Framebulk, lineText, currentLine, previousLine, diagnosticCollector);
-            if (commentLine) line.mergeComments(commentLine)
+            line.commentRange = commentRange;
             this.lines.push(line);
 
             const activeTools = line!.activeTools;
@@ -135,58 +126,57 @@ export class TASScript {
         return diagnosticCollector.getDiagnostics();
     }
 
-    removeComments(lineText: string, currentLine: number, multilineCommentsOpen: number, collector: DiagnosticCollector): [string, number, ScriptLine] {
-        let resultLine = scriptLineComment(lineText, false);
+    removeComments(lineText: string, currentLine: number, multilineCommentsOpen: number, collector: DiagnosticCollector): [string, number, CommentRange?] {
+        if (multilineCommentsOpen === 0) {
+            // Check for single line comments
+            const singleLineCommentOpenToken = lineText.indexOf('//');
+            if (singleLineCommentOpenToken !== -1) {
+                const newLineText = lineText.substring(0, singleLineCommentOpenToken);
 
-        // Check for single line comments
-        const singleLineCommentOpenToken = lineText.indexOf('//');
-        if (singleLineCommentOpenToken !== -1) {
-            resultLine.commentStart = singleLineCommentOpenToken;
-            resultLine.isComment = true;
+                if (lineText.length === 0) {
+                    return [
+                        newLineText,
+                        multilineCommentsOpen,
+                        new CommentRange(0, lineText.length, true)
+                    ];
+                }
 
-            lineText = lineText.substring(0, singleLineCommentOpenToken);
-            if (lineText.length === 0) {
-                // Only return if the line is empty after removing single line comments. 
-                // Otherwise we want to continue with the multiline comments.
-                return [lineText, multilineCommentsOpen, resultLine];
+                return [
+                    newLineText,
+                    multilineCommentsOpen,
+                    new CommentRange(singleLineCommentOpenToken, lineText.length)
+                ];
             }
         }
 
         const multilineCommentOpenToken = lineText.indexOf('/*');
         const multilineCommentCloseToken = lineText.indexOf('*/');
-        if (multilineCommentOpenToken !== -1 && multilineCommentCloseToken === -1) {
-            multilineCommentsOpen += 1;
-            lineText = lineText.substring(0, multilineCommentOpenToken);
 
-            resultLine.commentStart = multilineCommentOpenToken;
-            resultLine.isComment = true;
+        if (multilineCommentOpenToken === -1 && multilineCommentCloseToken === -1)
+            return [lineText, multilineCommentsOpen, multilineCommentsOpen > 0 ? new CommentRange(0, lineText.length, true) : undefined];
+
+        const commentRange = new CommentRange(multilineCommentOpenToken, multilineCommentCloseToken === -1 ? -1 : multilineCommentCloseToken + 2);
+
+        if (commentRange.start !== -1 && commentRange.end === -1) {
+            return [
+                lineText.substring(0, commentRange.start),
+                multilineCommentsOpen + 1,
+                new CommentRange(commentRange.start, lineText.length, commentRange.start === 0)
+            ];
         }
-        if (multilineCommentCloseToken !== -1) {
-            if (multilineCommentOpenToken === -1) {
-                multilineCommentsOpen -= 1;
-                resultLine.multilineCommentEnd = multilineCommentCloseToken;
-                resultLine.isComment = true;
-
-                if (multilineCommentsOpen < 0) {
-                    // Comment was closed but never opened
-                    collector.addDiagnostic(currentLine, multilineCommentCloseToken, multilineCommentCloseToken + 2, "Comment was never opened!");
-                    return [lineText, multilineCommentsOpen, resultLine];
-                }
-
-                lineText = lineText.substring(multilineCommentCloseToken + 2);
-            }
-            else {
-                lineText = lineText.substring(0, multilineCommentOpenToken) + lineText.substring(multilineCommentCloseToken + 2);
-                resultLine.multilineCommentEnd = multilineCommentCloseToken;
-                resultLine.isComment = true;
-            }
+        else if (commentRange.start === -1 && commentRange.end !== -1) {
+            return [
+                lineText.substring(commentRange.end),
+                multilineCommentsOpen - 1,
+                new CommentRange(0, commentRange.end, commentRange.end === lineText.length)
+            ];
         }
-
-        if (multilineCommentOpenToken === -1 && multilineCommentCloseToken === -1 && multilineCommentsOpen > 0) {
-            resultLine = scriptLineComment(lineText, true);
-            lineText = "";
+        else {
+            return [
+                lineText.substring(0, commentRange.start) + lineText.substring(commentRange.end),
+                multilineCommentsOpen,
+                commentRange
+            ];
         }
-
-        return [lineText, multilineCommentsOpen, resultLine!];
     }
 }
