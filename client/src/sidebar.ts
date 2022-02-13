@@ -22,7 +22,8 @@ export class TASSidebarProvider implements vscode.WebviewViewProvider {
 			enableScripts: true,
 			localResourceRoots: [
                 vscode.Uri.joinPath(this._extensionUri, "css"),
-                vscode.Uri.joinPath(this._extensionUri, "client", "src")
+                vscode.Uri.joinPath(this._extensionUri, "client", "src"),
+                vscode.Uri.joinPath(this._extensionUri, "images")
             ]
 		};
 
@@ -79,6 +80,14 @@ export class TASSidebarProvider implements vscode.WebviewViewProvider {
             vscode.Uri.joinPath(this._extensionUri, "client", "src", "sidebarScript.js")
         );
 
+        const checkmarkUri = webview.asWebviewUri(
+            vscode.Uri.joinPath(this._extensionUri, "images", "checkmark.svg")
+        );
+
+        const restartUri = webview.asWebviewUri(
+            vscode.Uri.joinPath(this._extensionUri, "images", "restart.svg")
+        );
+
         // Use a nonce to only allow a specific script to be run.
         const nonce = getNonce();
 
@@ -99,7 +108,7 @@ export class TASSidebarProvider implements vscode.WebviewViewProvider {
         </head>
         <body>
             <div>
-                <h2 style="display:inline-block;color:red" id="status">Disconnected</h2>
+                <h2 id="status">Disconnected</h2>
                 <button id="connect-button">Connect</button>
             </div>
             <div id="server-data" style="display:none">
@@ -109,18 +118,38 @@ export class TASSidebarProvider implements vscode.WebviewViewProvider {
                 <p>Current tick: <span id="data-tick">0</span></p>
             </div>
             <div id="buttons" style="display:none">
-                <button id="start-stop-button">Play TAS</button>
+                <div>
+                    <button id="start-stop-button">Play TAS</button>
+                    <button id="restart-button">
+                        <img src="${restartUri}">
+                    </button>
+                </div>
                 <button id="pause-resume-button">Pause TAS</button>
                 <button id="tick-advance-button">Tick advance TAS</button>
 
-                <button id="pauseat-button">Pause at tick</button>
-                <input type="text" id="pauseat-input" placeholder="0">
+                <p>Pause at tick</p>
+                <div>
+                    <input type="text" id="pauseat-input" placeholder="0">
+                    <button id="pauseat-button" class="unchanged" tabindex="-1">
+                        <img src="${checkmarkUri}">
+                    </button>
+                </div>
 
-                <button id="rate-button">Change playback rate</button>
-                <input type="text" id="rate-input" placeholder="1.0">
+                <p>Change playback rate</p>
+                <div>
+                    <input type="text" id="rate-input" placeholder="1.0">
+                    <button id="rate-button" class="unchanged" tabindex="-1">
+                        <img src="${checkmarkUri}">
+                    </button>
+                </div>
 
-                <button id="skip-button">Skip to tick</button>
-                <input type="text" id="skip-input" placeholder="0">
+                <p>Skip to tick</p>
+                <div>
+                    <input type="text" id="skip-input" placeholder="0">
+                    <button id="skip-button" class="unchanged" tabindex="-1">
+                        <img src="${checkmarkUri}">
+                    </button>
+                </div>
             </div>
 
             <script nonce="${nonce}" src="${scriptUri}"></script>
