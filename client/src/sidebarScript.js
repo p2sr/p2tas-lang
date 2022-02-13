@@ -97,7 +97,7 @@
             socketStatusText.innerText = "Connected";
             connectButton.innerText = "Disconnect";
             dataDiv.style.display = "initial";
-            buttonsDiv.style.display = "initial";
+            buttonsDiv.style.display = "flex";
         } else {
             socketStatusText.style.color = "red";
             socketStatusText.innerText = "Disconnected";
