@@ -25,6 +25,11 @@ const skipBox = document.querySelector("#skip-input");
 const pauseatButton = document.querySelector("#pauseat-button");
 const pauseatBox = document.querySelector("#pauseat-input");
 
+// Values for storing playback data
+let playbackRate = rateBox.value;
+let skipToTick = skipBox.value;
+let pauseAtTick = pauseatBox.value;
+
 connectButton.addEventListener('click', () => {
     if (connectButton.innerText === "Connect") {
         vscode.postMessage({ type: 'connect' });
@@ -55,6 +60,14 @@ tickAdvanceButton.addEventListener('click', () => {
 
 rateBox.addEventListener('keyup', key => {
     if (key.code === "Enter") changeRate();
+
+    if (rateBox.value !== playbackRate) { // Check if value has changed
+        rateButton.classList.remove("unchanged"); // Show set button
+        rateButton.tabIndex = 0; // Make set button tabbable
+    } else {
+        rateButton.classList.add("unchanged"); // Hide set button
+        rateButton.tabIndex = -1; // Make set button untabbable
+    }
 });
 
 rateButton.addEventListener('click', () => {
@@ -63,6 +76,14 @@ rateButton.addEventListener('click', () => {
 
 skipBox.addEventListener('keyup', key => {
     if (key.code === "Enter") fastForward();
+
+    if (skipBox.value !== skipToTick) { // Check if value has changed
+        skipButton.classList.remove("unchanged"); // Show set button
+        skipButton.tabIndex = 0; // Make set button tabbable
+    } else {
+        skipButton.classList.add("unchanged"); // Hide set button
+        skipButton.tabIndex = -1; // Make set button untabbable
+    }
 });
 
 skipButton.addEventListener('click', () => {
@@ -71,6 +92,14 @@ skipButton.addEventListener('click', () => {
 
 pauseatBox.addEventListener('keyup', key => {
     if (key.code === "Enter") nextPause();
+
+    if (pauseatBox.value !== pauseAtTick) { // Check if value has changed
+        pauseatButton.classList.remove("unchanged"); // Show set button
+        pauseatButton.tabIndex = 0; // Make set button tabbable
+    } else {
+        pauseatButton.classList.add("unchanged"); // Hide set button
+        pauseatButton.tabIndex = -1; // Make set button untabbable
+    }
 });
 
 pauseatButton.addEventListener('click', () => {
@@ -172,14 +201,17 @@ function handleMessage(message) {
 function changeRate() {
     rate = +rateBox.value;
     vscode.postMessage({ type: 'changeRate', rate: rate });
+    playbackRate = rateBox.value;
 }
 
 function fastForward() {
     tick = +skipBox.value;
     vscode.postMessage({ type: 'fastForward', tick: tick });
+    skipToTick = skipBox.value;
 }
 
 function nextPause() {
     tick = +pauseatBox.value;
     vscode.postMessage({ type: 'nextPause', tick: tick });
+    pauseAtTick = pauseatBox.value;
 }

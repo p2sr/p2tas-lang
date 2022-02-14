@@ -121,7 +121,7 @@ export class TASSidebarProvider implements vscode.WebviewViewProvider {
                 <p>Pause at tick</p>
                 <div>
                     <input type="text" id="pauseat-input" placeholder="0">
-                    <button id="pauseat-button">
+                    <button id="pauseat-button" class="unchanged" tabindex="-1">
                         <img src="${checkmarkUri}">
                     </button>
                 </div>
@@ -129,7 +129,7 @@ export class TASSidebarProvider implements vscode.WebviewViewProvider {
                 <p>Change playback rate</p>
                 <div>
                     <input type="text" id="rate-input" placeholder="1.0">
-                    <button id="rate-button">
+                    <button id="rate-button" class="unchanged" tabindex="-1">
                         <img src="${checkmarkUri}">
                     </button>
                 </div>
@@ -137,7 +137,7 @@ export class TASSidebarProvider implements vscode.WebviewViewProvider {
                 <p>Skip to tick</p>
                 <div>
                     <input type="text" id="skip-input" placeholder="0">
-                    <button id="skip-button">
+                    <button id="skip-button" class="unchanged" tabindex="-1">
                         <img src="${checkmarkUri}">
                     </button>
                 </div>
