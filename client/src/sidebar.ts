@@ -84,6 +84,10 @@ export class TASSidebarProvider implements vscode.WebviewViewProvider {
             vscode.Uri.joinPath(this._extensionUri, "images", "checkmark.svg")
         );
 
+        const restartUri = webview.asWebviewUri(
+            vscode.Uri.joinPath(this._extensionUri, "images", "restart.svg")
+        );
+
         // Use a nonce to only allow a specific script to be run.
         const nonce = getNonce();
 
@@ -114,7 +118,12 @@ export class TASSidebarProvider implements vscode.WebviewViewProvider {
                 <p>Current tick: <span id="data-tick">0</span></p>
             </div>
             <div id="buttons" style="display:none">
-                <button id="start-stop-button">Play TAS</button>
+                <div>
+                    <button id="start-stop-button">Play TAS</button>
+                    <button id="restart-button">
+                        <img src="${restartUri}">
+                    </button>
+                </div>
                 <button id="pause-resume-button">Pause TAS</button>
                 <button id="tick-advance-button">Tick advance TAS</button>
 

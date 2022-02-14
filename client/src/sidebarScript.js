@@ -16,6 +16,7 @@ const buttonsDiv = document.querySelector("#buttons");
 
 const connectButton = document.querySelector("#connect-button");
 const playButton = document.querySelector("#start-stop-button");
+const restartButton = document.querySelector("#restart-button");
 const pauseButton = document.querySelector("#pause-resume-button");
 const tickAdvanceButton = document.querySelector("#tick-advance-button");
 const rateButton = document.querySelector("#rate-button");
@@ -44,6 +45,11 @@ playButton.addEventListener('click', () => {
     } else {
         vscode.postMessage({ type: 'stopTAS' });
     }
+});
+
+restartButton.addEventListener('click', () => {
+    vscode.postMessage({ type: 'stopTAS' });
+    vscode.postMessage({ type: 'playTAS' });
 });
 
 pauseButton.addEventListener('click', () => {
