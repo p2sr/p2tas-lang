@@ -72,6 +72,9 @@ rateBox.addEventListener('keyup', key => {
 
 rateButton.addEventListener('click', () => {
     changeRate();
+    rateButton.classList.add("unchanged"); // Hide set button
+    rateButton.tabIndex = -1; // Make set button untabbable
+    document.activeElement.blur(); // Remove focus from button
 });
 
 skipBox.addEventListener('keyup', key => {
@@ -88,6 +91,9 @@ skipBox.addEventListener('keyup', key => {
 
 skipButton.addEventListener('click', () => {
     fastForward();
+    skipButton.classList.add("unchanged"); // Hide set button
+    skipButton.tabIndex = -1; // Make set button untabbable
+    document.activeElement.blur(); // Remove focus from button
 });
 
 pauseatBox.addEventListener('keyup', key => {
@@ -104,6 +110,9 @@ pauseatBox.addEventListener('keyup', key => {
 
 pauseatButton.addEventListener('click', () => {
     nextPause();
+    pauseatButton.classList.add("unchanged"); // Hide set button
+    pauseatButton.tabIndex = -1; // Make set button untabbable
+    document.activeElement.blur(); // Remove focus from button
 });
 
 // Attempt to restore state
