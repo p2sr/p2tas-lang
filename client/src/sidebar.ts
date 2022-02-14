@@ -104,7 +104,7 @@ export class TASSidebarProvider implements vscode.WebviewViewProvider {
         </head>
         <body>
             <div>
-                <h2 style="display:inline-block;color:red" id="status">Disconnected</h2>
+                <h2 id="status">Disconnected</h2>
                 <button id="connect-button">Connect</button>
             </div>
             <div id="server-data" style="display:none">

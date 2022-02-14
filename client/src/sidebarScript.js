@@ -92,7 +92,7 @@ window.addEventListener('message', event => {
 function handleMessage(message) {
     // Reset UI
     if (message.reset === null) {
-        socketStatusText.style.color = "red";
+        socketStatusText.style.color = "var(--vscode-charts-red)";
         socketStatusText.innerText = "Disconnected";
         connectButton.innerText = "Connect";
         dataDiv.style.display = "none";
@@ -101,13 +101,13 @@ function handleMessage(message) {
     }
 
     if (message.connected) {
-        socketStatusText.style.color = "green";
+        socketStatusText.style.color = "var(--vscode-charts-green)";
         socketStatusText.innerText = "Connected";
         connectButton.innerText = "Disconnect";
-        dataDiv.style.display = "initial";
+        dataDiv.style.display = "";
         buttonsDiv.style.display = "flex";
     } else {
-        socketStatusText.style.color = "red";
+        socketStatusText.style.color = "var(--vscode-charts-red)";
         socketStatusText.innerText = "Disconnected";
         connectButton.innerText = "Connect";
         dataDiv.style.display = "none";
