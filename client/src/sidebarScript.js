@@ -127,6 +127,8 @@ function handleMessage(message) {
             pauseButton.style.backgroundColor = "#444444";
             tickAdvanceButton.disabled = true;
             tickAdvanceButton.style.backgroundColor = "#444444";
+
+            dataStatusText.style.color = "var(--vscode-charts-lines)";
             break;
 
         case "Playing":
@@ -137,6 +139,8 @@ function handleMessage(message) {
             pauseButton.style.background = defaultButtonBackground;
             tickAdvanceButton.disabled = true;
             tickAdvanceButton.style.backgroundColor = "#444444";
+
+            dataStatusText.style.color = "var(--vscode-charts-green)";
             break;
 
         case "Paused":
@@ -147,6 +151,8 @@ function handleMessage(message) {
             pauseButton.style.background = defaultButtonBackground;
             tickAdvanceButton.disabled = false;
             tickAdvanceButton.style.backgroundColor = defaultButtonBackground;
+
+            dataStatusText.style.color = "var(--vscode-charts-yellow)";
             break;
 
         case "Skipping":
@@ -157,6 +163,8 @@ function handleMessage(message) {
             pauseButton.style.background = defaultButtonBackground;
             tickAdvanceButton.disabled = true;
             tickAdvanceButton.style.backgroundColor = "#444444";
+
+            dataStatusText.style.color = "var(--vscode-charts-blue)";
             break;
     }
 }
