@@ -3,6 +3,12 @@
 Syntax highlighting, snippets and autocompletion for the Portal 2 TAS files.
 
 ## Release Notes
+### 1.1.0
+- Improved sidebar UI (thanks to soni801)
+    - Added replay button
+    - Hotter UI
+    - Press enter to confirm in input fields
+
 ### 1.0.0
 - Added language server (thanks to david072)
     - Provides errors and warnings
