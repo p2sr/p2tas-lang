@@ -58,12 +58,22 @@ export class TASServer {
     //                 Sending data
     // ----------------------------------------------
 
-    requestPlayback() {
+    requestToolsPlayback() {
+        var filename = vscode.window.activeTextEditor?.document?.fileName;
+        if(filename === undefined) return;
+        this.requestPlayback(filename);
+    }
+    requestRawPlayback() {
+        var filename = vscode.window.activeTextEditor?.document?.fileName;
+        if(filename === undefined) return;
+
+        filename = filename.replace(".p2tas", "_raw.p2tas");
+        this.requestPlayback(filename);
+    }
+    requestPlayback(scriptPath : string) {
         if (!this.checkSocket())
             return;
-    
-        var scriptPath = vscode.window.activeTextEditor?.document?.fileName;
-        if (scriptPath === undefined) return;
+
         scriptPath = fs.realpathSync(path.normalize(scriptPath));
 
         // If we have no game location, get the plain filename and hope for the best

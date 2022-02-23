@@ -120,7 +120,8 @@ export function activate(context: vscode.ExtensionContext) {
 
     vscode.commands.registerCommand("p2tas-lang.connectSAR", () => server.connect());
     vscode.commands.registerCommand("p2tas-lang.disconnectSAR", () => server.disconnect());
-    vscode.commands.registerCommand("p2tas-lang.playTAS", () => server.requestPlayback());
+    vscode.commands.registerCommand("p2tas-lang.playToolsTAS", () => server.requestToolsPlayback());
+    vscode.commands.registerCommand("p2tas-lang.playRawTAS", () => server.requestRawPlayback());
     vscode.commands.registerCommand("p2tas-lang.stopTAS", () => server.requestStopPlayback());
     vscode.commands.registerCommand("p2tas-lang.changeRate", async () => {
         const input = await vscode.window.showInputBox({ placeHolder: "Desired rate", ignoreFocusOut: true });

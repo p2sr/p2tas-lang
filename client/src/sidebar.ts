@@ -34,8 +34,11 @@ export class TASSidebarProvider implements vscode.WebviewViewProvider {
                 case 'connect':
                     this.server.connect();
                     break;
-				case 'playTAS':
-					this.server.requestPlayback();
+                case 'playToolsTAS':
+                    this.server.requestToolsPlayback();
+                    break;
+                case 'playRawTAS':
+                    this.server.requestRawPlayback();
                     break;
                 case 'stopTAS':
                     this.server.requestStopPlayback();
@@ -118,12 +121,12 @@ export class TASSidebarProvider implements vscode.WebviewViewProvider {
                 <p>Current tick: <span id="data-tick">0</span></p>
             </div>
             <div id="buttons" style="display:none">
-                <div>
-                    <button id="start-stop-button">Play TAS</button>
-                    <button id="restart-button">
-                        <img src="${restartUri}">
-                    </button>
+                <div id="play-buttons">
+                    <button id="start-stop-button">Play TAS</button><button id="start-stop-raw-button">Play RAW TAS</button>
                 </div>
+                <button id="restart-button">
+                    <img src="${restartUri}">
+                </button>
                 <button id="pause-resume-button">Pause TAS</button>
                 <button id="tick-advance-button">Tick advance TAS</button>
 
@@ -137,7 +140,17 @@ export class TASSidebarProvider implements vscode.WebviewViewProvider {
 
                 <p>Change playback rate</p>
                 <div>
-                    <input type="text" id="rate-input" placeholder="1.0">
+                    <div id="rate">
+                        <input type="range" id="rate-input-slider" list="tickmarks" min="0" max="1" value="1" step="0.025">
+                        <datalist id="tickmarks">
+                        <option value = "0" label="0">
+                        <option value = "0.25" label="0.25">
+                        <option value = "0.5" label="0.5">
+                        <option value = "0.75" label="0.75">
+                        <option value = "1" label="1">
+                        </datalist>
+                        <input type="text" id="rate-input-text" placeholder="1">
+                    </div>
                     <button id="rate-button" class="unchanged" tabindex="-1">
                         <img src="${checkmarkUri}">
                     </button>

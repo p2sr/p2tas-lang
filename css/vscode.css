@@ -32,7 +32,7 @@ body {
 /* FIXME: PLEASE SOMEONE THIS IS SO BAD CAN SOMEONE MAKE IT NOT SHIT */
 #buttons > div button {
 	height: calc(1em + 4px);
-    width: calc(1em + 4px);
+    width: 100%;
 	margin-left: 3px;
     aspect-ratio: 1;
     box-sizing: content-box;
@@ -68,6 +68,44 @@ button:hover {
 
 button:focus {
 	outline-color: var(--vscode-focusBorder);
+}
+
+#play-buttons {
+	width: 100%;
+	text-align: center;
+}
+
+#start-stop-button {
+	border-right: 2px solid var(--vscode-editor-background);
+}
+
+#start-stop-raw-button {
+	border-left: 2px solid var(--vscode-editor-background);
+}
+
+#restart-button {
+    padding-top: 0.2em;
+    padding-bottom: 0.2em;
+}
+
+#rate {
+	display: flex;
+	width: 100%;
+	justify-content: space-between;
+}
+
+#rate-input-slider {
+	width: 100%;
+	display: inline-block;
+	vertical-align: middle;
+	margin-right: 1em;
+}
+
+#rate-input-text {
+	width: 2.5em;
+	display: inline-block;
+	text-align: center;
+	vertical-align: middle;
 }
 
 input {

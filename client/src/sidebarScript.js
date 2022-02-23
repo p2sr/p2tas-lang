@@ -15,12 +15,14 @@ const dataDiv = document.querySelector("#server-data");
 const buttonsDiv = document.querySelector("#buttons");
 
 const connectButton = document.querySelector("#connect-button");
-const playButton = document.querySelector("#start-stop-button");
+const playToolsButton = (document.getElementById("start-stop-button"));
+const playRawButton = (document.getElementById("start-stop-raw-button"));
 const restartButton = document.querySelector("#restart-button");
 const pauseButton = document.querySelector("#pause-resume-button");
 const tickAdvanceButton = document.querySelector("#tick-advance-button");
 const rateButton = document.querySelector("#rate-button");
-const rateBox = document.querySelector("#rate-input");
+const rateSlider = document.getElementById("rate-input-slider");
+const rateBox = document.getElementById("rate-input-text");
 const skipButton = document.querySelector("#skip-button");
 const skipBox = document.querySelector("#skip-input");
 const pauseatButton = document.querySelector("#pauseat-button");
@@ -39,9 +41,17 @@ connectButton.addEventListener('click', () => {
     }
 });
 
-playButton.addEventListener('click', () => {
+playToolsButton.addEventListener('click', () => {
     if (dataStatusText.innerText === "Inactive") {
-        vscode.postMessage({ type: 'playTAS' });
+        vscode.postMessage({ type: 'playToolsTAS' });
+    } else {
+        vscode.postMessage({ type: 'stopTAS' });
+    }
+});
+
+playRawButton.addEventListener('click', () => {
+    if (dataStatusText.innerText === "Inactive") {
+        vscode.postMessage({ type: 'playRawTAS' });
     } else {
         vscode.postMessage({ type: 'stopTAS' });
     }
@@ -62,6 +72,13 @@ pauseButton.addEventListener('click', () => {
 
 tickAdvanceButton.addEventListener('click', () => {
     vscode.postMessage({ type: 'tickAdvance' });
+});
+
+rateSlider.addEventListener('input', () => {
+    rateBox.value = +rateSlider.value;
+    rate = +rateSlider.value;
+    vscode.postMessage({ type: 'changeRate', rate:rate });
+
 });
 
 rateBox.addEventListener('keyup', key => {
@@ -164,7 +181,7 @@ function handleMessage(message) {
 
     switch (message.state) {
         case "Inactive":
-            playButton.innerText = "Play TAS";
+            playToolsButton.innerText = "Play TAS";
             pauseButton.innerText = "Pause TAS";
 
             pauseButton.disabled = true;
@@ -176,7 +193,7 @@ function handleMessage(message) {
             break;
 
         case "Playing":
-            playButton.innerText = "Stop TAS";
+            playToolsButton.innerText = "Stop TAS";
             pauseButton.innerText = "Pause TAS";
 
             pauseButton.disabled = false;
@@ -188,7 +205,7 @@ function handleMessage(message) {
             break;
 
         case "Paused":
-            playButton.innerText = "Stop TAS";
+            playToolsButton.innerText = "Stop TAS";
             pauseButton.innerText = "Resume TAS";
 
             pauseButton.disabled = false;
@@ -200,7 +217,7 @@ function handleMessage(message) {
             break;
 
         case "Skipping":
-            playButton.innerText = "Stop TAS";
+            playToolsButton.innerText = "Stop TAS";
             pauseButton.innerText = "Pause TAS";
 
             pauseButton.disabled = false;
