@@ -21,7 +21,12 @@
     },
     "Insert an empty instruction line": {
         "prefix": "empty",
-        "body": "${1:tick}>||||",
+        "body": "${1:tick}>|$2|$3|$4|$5",
+        "description": "Inserts an instruction line"
+    },
+    "Insert a loop": {
+        "prefix": "repeat",
+        "body": "repeat ${1:iterations}\n\t${2:tick}>|$3|$4|$5|$6\nend",
         "description": "Inserts an instruction line"
     }
 }

@@ -55,5 +55,4 @@ export const startTypes: StartTypes = {
 export type CompletionItemDeclaration = { name: string, description: string };
 
 export const startCompletion: CompletionItemDeclaration = { name: "start", description: "**Syntax:** ```start <map|save|cm|now|next>```\n\nDefines how the TAS should start. Must be the first statement in a script." };
-export const repeatCompletion: CompletionItemDeclaration = { name: "repeat", description: "**Syntax:** ```repeat [iterations]```\n\nMarks the start of a loop that repeats [iterations] times." };
 export const endCompletion: CompletionItemDeclaration = { name: "end", description: "**Syntax:** ```end```\n\nMarks the end of a loop. Will produce an error if used without a loop being started." };

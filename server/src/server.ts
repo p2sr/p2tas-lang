@@ -12,7 +12,7 @@ import {
 
 import { TASScript } from './tas-script/tasScript';
 import { TASTool } from './tas-script/tasTool';
-import { CompletionItemDeclaration, endCompletion, repeatCompletion, startCompletion, startTypes } from './tas-script/util';
+import { CompletionItemDeclaration, endCompletion, startCompletion, startTypes } from './tas-script/util';
 
 const connection = createConnection(ProposedFeatures.all);
 const documents: Map<string, TASScript> = new Map();
@@ -73,7 +73,6 @@ connection.onCompletion((params: TextDocumentPositionParams): CompletionItem[] =
 		if (isStartOfLine) {
 			let options: CompletionItemDeclaration[] = [];
 			if (isInFirstLine) options.push(startCompletion);
-			options.push(repeatCompletion);
 			options.push(endCompletion);
 			return options.map((option) => {
 				return {
