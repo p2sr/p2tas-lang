@@ -50,6 +50,11 @@
                 "category": "p2tas"
             },
             {
+                "command": "p2tas-lang.toggleLineTickType",
+                "title": "Toggle line tick type",
+                "category": "p2tas"
+            },
+            {
                 "command": "p2tas-lang.connectSAR",
                 "title": "Connect to SAR through the TCP socket",
                 "category": "p2tas"

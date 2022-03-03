@@ -106,6 +106,44 @@ export function activate(context: vscode.ExtensionContext) {
         });
     });
 
+    vscode.commands.registerCommand("p2tas-lang.toggleLineTickType", async () => {
+        var editor = vscode.window.activeTextEditor;
+        if (!editor) {
+            vscode.window.showErrorMessage("No currently active editor");
+            return;
+        };
+
+        const line = editor!.selection.active.line;
+        const oldLineText = editor!.document.lineAt(line).text;
+
+        const newLineText: string = await client.sendRequest("p2tas/toggleLineTickType", [editor!.document.uri, line]);
+        if (newLineText === oldLineText) return;
+
+        editor.edit(editBuilder => {
+            editBuilder.replace(new vscode.Range(new vscode.Position(line, 0), new vscode.Position(line, oldLineText.length)), newLineText);
+        });
+    });
+
+    const codeActionProvider = vscode.languages.registerCodeActionsProvider('p2tas', {
+        async provideCodeActions(document, range): Promise<vscode.CodeAction[] | undefined> {
+            const line = range.start.line;
+            const oldLineText = document.lineAt(line).text;
+
+            const newLineText: string = await client.sendRequest("p2tas/toggleLineTickType", [document.uri, line]);
+            if (newLineText === "" || newLineText === oldLineText) return [];
+
+            const toggleLineTickType = new vscode.CodeAction("Toggle line tick type", vscode.CodeActionKind.RefactorRewrite);
+            toggleLineTickType.edit = new vscode.WorkspaceEdit();
+            toggleLineTickType.edit.replace(document.uri, new vscode.Range(new vscode.Position(line, 0), new vscode.Position(line, oldLineText.length)), newLineText);
+            toggleLineTickType.isPreferred = true;
+
+            return [toggleLineTickType];
+        }
+    });
+
+    context.subscriptions.push(codeActionProvider);
+
+
     vscode.window.onDidChangeTextEditorSelection(event => {
         const editor = vscode.window.activeTextEditor;
         if (!editor) return;

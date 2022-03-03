@@ -9,6 +9,7 @@ import {
 	InsertTextFormat,
 	MarkupKind
 } from 'vscode-languageserver/node';
+import { LineType, ScriptLine } from './tas-script/scriptLine';
 
 import { TASScript } from './tas-script/tasScript';
 import { TASTool } from './tas-script/tasTool';
@@ -258,6 +259,56 @@ connection.onRequest("p2tas/lineTick", (params: [any, number]) => {
 	const line = script.lines[lineNumber];
 
 	return line.absoluteTick;
+});
+
+connection.onRequest("p2tas/toggleLineTickType", (params: [any, number]) => {
+	const [uri, lineNumber] = params;
+
+	const script = documents.get(uri.external);
+	if (script === undefined) return "";
+	const line = script.lines[lineNumber];
+
+	if (line.type !== LineType.Framebulk) return "";
+
+	if (line.relativeTick === undefined) {
+		// Switch from absolute to relative
+		if (lineNumber - 1 < 0) return line.lineText;
+
+		let previousLine: ScriptLine | undefined = undefined;
+		for (let i = lineNumber - 1; i > 0; i--) {
+			if (script.lines[i].type !== LineType.Comment) {
+				previousLine = script.lines[i]
+				break;
+			}
+		}
+
+		// If there is no previous line, then the requested line was the first line in the file
+		if (previousLine === undefined) return line.lineText;
+
+		const firstCharacter = line.lineText.match(/\S/)?.index || 0;
+		let arrowCharacter = line.lineText.indexOf('>');
+		if (arrowCharacter === -1) arrowCharacter = line.lineText.length;
+
+		//      everything before the first character        the new tick section                             everything after '>' including '>'
+		return `${line.lineText.substring(0, firstCharacter)}+${line.absoluteTick - previousLine.absoluteTick}${line.lineText.substring(arrowCharacter)}`;
+	}
+	else {
+		// Switch from relative to absolute
+		if (lineNumber - 1 > 0) {
+			for (let i = lineNumber - 1; i > 0; i--) {
+				const _line = script.lines[i];
+				// Can't switch to absolute in a repeat statement, or switch the first framebulk in the file
+				if (_line.type === LineType.RepeatStart || _line.type === LineType.Start) return line.lineText;
+			}
+		}
+
+		const firstCharacter = line.lineText.match(/\S/)?.index || 0;
+		let arrowCharacter = line.lineText.indexOf('>');
+		if (arrowCharacter === -1) arrowCharacter = line.lineText.length;
+
+		//      everything before the first character        the absolute tick   everything after '>' including '>'
+		return `${line.lineText.substring(0, firstCharacter)}${line.absoluteTick}${line.lineText.substring(arrowCharacter)}`;
+	}
 });
 
 // Listen on the connection
