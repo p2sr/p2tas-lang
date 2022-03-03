@@ -53,6 +53,7 @@ connection.onCompletion((params: TextDocumentPositionParams): CompletionItem[] =
 
 	const line = script.lines[params.position.line];
 	const lineText = line.lineText;
+	if (lineText.split("|").length - 1 !== 4) return [];
 
 	let isStartOfLine = false;
 	let isInFirstLine = false;

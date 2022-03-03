@@ -299,15 +299,15 @@ function parseTools(lineText: string, line: number, currentTick: number, startIn
     // These functions use the variables defined in the outer function, and are called from below code
 
     // validateToolArgument validates the tool argument and changes didFindOffArg to true if needed
-    function validateToolArgument(toolName: string, arg: string, index: number, firstCharacter: number): boolean {
+    function validateToolArgument(toolName: string, arg: string, index: number, firstCharacter: number): [TASTool.ToolArgument | undefined, boolean] {
         const toolArg = TASTool.getToolArgument(toolName, arg);
         if (!toolArg) {
             collector.addDiagnostic(line, index + firstCharacter, index + arg.length, `Tool '${toolName}' does not have argument '${arg}'`);
-            return false;
+            return [undefined, false];
         }
 
         // didFindOffArg
-        return toolArg && toolArg.type === TASTool.ToolArgumentType.Off;
+        return [toolArg, toolArg.type === TASTool.ToolArgumentType.Off];
     }
 
     function updateActiveTools(toolName: string, didFindOffArg: boolean, argumentsGiven: string[]) {
@@ -343,12 +343,14 @@ function parseTools(lineText: string, line: number, currentTick: number, startIn
         const [parts, firstCharacter, lastCharacter] = getParts(toolDecl);
 
         let toolName = "";
-        let argumentsGiven: string[] = [];
+        let argumentsGiven: { text: string, argument?: TASTool.ToolArgument }[] = [];
         let foundTool = false;
         let didFindOffArg = false;
 
         for (let i = 0; i < parts.length; i++) {
             const part = parts[i];
+            if (part.length === 0) continue;
+            
             if (!foundTool) {
                 toolName = part;
                 if (!TASTool.tools.hasOwnProperty(toolName)) {
@@ -361,17 +363,21 @@ function parseTools(lineText: string, line: number, currentTick: number, startIn
             }
             else {
                 const arg = part.trim();
-                didFindOffArg = validateToolArgument(toolName, arg, index, firstCharacter);
-                argumentsGiven.push(arg);
+                let toolArg: TASTool.ToolArgument | undefined;
+                [toolArg, didFindOffArg] = validateToolArgument(toolName, arg, index, firstCharacter);
+                argumentsGiven.push({ text: arg, argument: toolArg });
             }
 
             index += part.length;
             if (i < parts.length - 1) index++;
         }
 
-        updateActiveTools(toolName, didFindOffArg, argumentsGiven);
+        updateActiveTools(toolName, didFindOffArg, argumentsGiven.map((elem) => elem.text));
         if (argumentsGiven.length === 0) {
             collector.addDiagnosticToLine(line, index + lastCharacter - 1, "Expected arguments");
+        }
+        else if (argumentsGiven.findIndex((elem) => elem.argument && elem.argument.type === TASTool.ToolArgumentType.Off) === -1 && argumentsGiven.length < TASTool.tools[toolName].requiredArgumentsCount) {
+            collector.addDiagnosticToLine(line, index + lastCharacter - 1, "Too few arguments");
         }
 
         index += 1;
