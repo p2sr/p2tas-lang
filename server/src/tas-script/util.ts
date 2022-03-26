@@ -58,6 +58,7 @@ export const startTypes: StartTypes = {
         description: "Starts playing the TAS after loading the given save."
     },
     cm: {
+        hasArgument: true,
         description: "Starts playing the TAS after loading into the given map, but in Challenge Mode."
     },
     now: {

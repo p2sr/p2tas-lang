@@ -34,7 +34,7 @@ export class TASScript {
 
             let previousLine = this.lines.length === 0 ? new ScriptLine("", LineType.Framebulk, 0) : this.lines[this.lines.length - 1];
 
-            if (lineText.length === 0) {
+            if (lineText.trim().length === 0 || commentRange?.isWholeLine) {
                 this.lines.push(new ScriptLine(fullLineText, LineType.Comment, previousLine.absoluteTick, undefined, previousLine.activeTools, commentRange));
                 currentLine++;
                 continue;
@@ -136,14 +136,14 @@ export class TASScript {
                 if (lineText.length === 0) {
                     return [
                         newLineText,
-                        multilineCommentsOpen,
+                        0,
                         new CommentRange(0, lineText.length, true)
                     ];
                 }
 
                 return [
                     newLineText,
-                    multilineCommentsOpen,
+                    0,
                     new CommentRange(singleLineCommentOpenToken, lineText.length)
                 ];
             }
@@ -165,6 +165,10 @@ export class TASScript {
             ];
         }
         else if (commentRange.start === -1 && commentRange.end !== -1) {
+            const newMultilineCommentsOpen = multilineCommentsOpen - 1;
+            if (newMultilineCommentsOpen < 0)
+                collector.addDiagnostic(currentLine, commentRange.end - 2, commentRange.end, "Comment was never opened");
+
             return [
                 lineText.substring(commentRange.end),
                 multilineCommentsOpen - 1,
