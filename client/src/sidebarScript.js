@@ -15,14 +15,14 @@ const dataDiv = document.querySelector("#server-data");
 const buttonsDiv = document.querySelector("#buttons");
 
 const connectButton = document.querySelector("#connect-button");
-const playToolsButton = (document.getElementById("start-stop-button"));
-const playRawButton = (document.getElementById("start-stop-raw-button"));
+const playToolsButton = document.querySelector("#start-stop-button");
+const playRawButton = document.querySelector("#start-stop-raw-button");
 const restartButton = document.querySelector("#restart-button");
 const pauseButton = document.querySelector("#pause-resume-button");
 const tickAdvanceButton = document.querySelector("#tick-advance-button");
 const rateButton = document.querySelector("#rate-button");
-const rateSlider = document.getElementById("rate-input-slider");
-const rateBox = document.getElementById("rate-input-text");
+const rateSlider = document.querySelector("#rate-input-slider");
+const rateBox = document.querySelector("#rate-input-text");
 const skipButton = document.querySelector("#skip-button");
 const skipBox = document.querySelector("#skip-input");
 const pauseatButton = document.querySelector("#pauseat-button");
@@ -75,10 +75,34 @@ tickAdvanceButton.addEventListener('click', () => {
 });
 
 rateSlider.addEventListener('input', () => {
+    // First, set the input field to have the same value as the slider
     rateBox.value = +rateSlider.value;
-    rate = +rateSlider.value;
-    vscode.postMessage({ type: 'changeRate', rate:rate });
 
+    /* 
+     * Initially, the slider would automatically submit the new value to the server
+     * immediately after change. However, me and rainboww both think it is a better
+     * idea to wait with sending the new value to the server until the user presses
+     * the apply button. When we have the apply button in the first place, it makes
+     * sense to also use it here. If you still want to automatically send the value
+     * to the server as it is changed, replace this whole method with a call to the
+     * changeRate() method (line 78 to line 88). Eventually when settings are added
+     * in the future, this will probably be opt-out. - Soni
+     */
+});
+
+rateSlider.addEventListener('mouseup', event => {
+    if (event.button != 0) return;
+    // First, set the input field to have the same value as the slider
+    rateBox.value = +rateSlider.value;
+
+    // Then, set the visibility of the checkmark for the user to confirm the change
+    if (rateBox.value !== playbackRate) { // Check if value has changed
+        rateButton.classList.remove("unchanged"); // Show set button
+        rateButton.tabIndex = 0; // Make set button tabbable
+    } else {
+        rateButton.classList.add("unchanged"); // Hide set button
+        rateButton.tabIndex = -1; // Make set button untabbable
+    }
 });
 
 rateBox.addEventListener('keyup', key => {

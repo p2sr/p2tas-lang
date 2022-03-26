@@ -1,86 +1,81 @@
 :root {
-	--container-padding: 20px;
-	--input-padding-vertical: 6px;
-	--input-padding-horizontal: 4px;
-	--input-margin-vertical: 4px;
-	--input-margin-horizontal: 0;
+    --container-padding: 20px;
+    --input-padding-vertical: 6px;
+    --input-padding-horizontal: 4px;
+    --input-margin-vertical: 4px;
+    --input-margin-horizontal: 0;
 }
 
 body {
-	padding: 0 var(--container-padding);
-	color: var(--vscode-foreground);
-	background-color: var(--vscode-editor-background);
+    padding: 0 var(--container-padding);
+    color: var(--vscode-foreground);
+    background-color: var(--vscode-editor-background);
 }
 
 *:focus {
-	outline-color: var(--vscode-focusBorder) !important;
+    outline-color: var(--vscode-focusBorder) !important;
 }
 
 #status, #server-data {
-	padding: 1rem 0;
+    padding: 1rem 0;
 }
 
 #buttons {
-	flex-direction: column;
-	gap: 5px;
+    flex-direction: column;
+    gap: 5px;
 }
 
 #buttons > div {
-	display: flex;
+    display: flex;
 }
 
-/* FIXME: PLEASE SOMEONE THIS IS SO BAD CAN SOMEONE MAKE IT NOT SHIT */
-#buttons > div button {
-	height: calc(1em + 4px);
-    width: 100%;
-	margin-left: 3px;
+#buttons > div img {
     aspect-ratio: 1;
     box-sizing: content-box;
     padding: var(--input-padding-vertical);
-	transition: .3s ease;
+    transition: .3s ease;
 }
 
-#buttons > div button.unchanged { /* Selector has to be weird because of specificity */
-	width: 0;
-	margin: 0;
-	padding: var(--input-padding-vertical) 0;
+#buttons > div img.checkmark {
+    margin-left: 4px;
+    height: calc(1em + 4px);
 }
 
-#start-stop-button {
-	width: 100% !important;
-	margin: 0 !important;
+#buttons > div img.unchanged { /* Selector has to be weird because of specificity */
+    width: 0;
+    margin: 0;
+    padding: var(--input-padding-vertical) 0;
 }
 
-button {
-	border: none;
-	padding: var(--input-padding-vertical) var(--input-padding-horizontal);
-	width: 100%;
-	outline: 1px solid transparent;
-	outline-offset: 2px !important;
-	color: var(--vscode-button-foreground);
-	background: var(--vscode-button-background);
+button, img {
+    border: none;
+    padding: var(--input-padding-vertical) var(--input-padding-horizontal);
+    outline: 1px solid transparent;
+    outline-offset: 2px !important;
+    color: var(--vscode-button-foreground);
+    background: var(--vscode-button-background);
 }
 
 button:hover {
-	cursor: pointer;
-	background: var(--vscode-button-hoverBackground);
+    cursor: pointer;
+    background: var(--vscode-button-hoverBackground);
 }
 
 button:focus {
-	outline-color: var(--vscode-focusBorder);
+    outline-color: var(--vscode-focusBorder);
+}
+
+#connect-button {
+	width: 100%; /* Make the connection button stretch */
 }
 
 #play-buttons {
-	width: 100%;
-	text-align: center;
+    gap: 4px; /* Create horizontal space between buttons */
+    height: 28px; /* Set the same height as other buttons (otherwise image would expland the container) */
 }
 
-#start-stop-button {
-	border-right: 2px solid var(--vscode-editor-background);
-}
-
-#start-stop-raw-button {
-	border-left: 2px solid var(--vscode-editor-background);
+#play-buttons button {
+    flex-grow: 1; /* Allow the buttons to expand to fill the available area */
 }
 
 #restart-button {
@@ -89,39 +84,37 @@ button:focus {
 }
 
 #rate {
-	display: flex;
-	width: 100%;
-	justify-content: space-between;
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+	height: 28px;
 }
 
 #rate-input-slider {
-	width: 100%;
-	display: inline-block;
-	vertical-align: middle;
-	margin-right: 1em;
+    width: 100%;
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 1em;
 }
 
 #rate-input-text {
-	width: 2.5em;
-	display: inline-block;
-	text-align: center;
-	vertical-align: middle;
+    width: 2.5em;
+    display: inline-block;
+    text-align: center;
+    vertical-align: middle;
 }
 
 input {
-	width: 100%;
-	border: none;
-	font-family: var(--vscode-font-family);
-	padding: var(--input-padding-vertical) var(--input-padding-horizontal);
-	color: var(--vscode-input-foreground);
-	background-color: var(--vscode-input-background);
+    width: 100%;
+    border: none;
+    font-family: var(--vscode-font-family);
+    padding: var(--input-padding-vertical) var(--input-padding-horizontal);
+    color: var(--vscode-input-foreground);
+    background-color: var(--vscode-input-background);
 }
 
+/* Improve the color of placeholders */
 input::placeholder,
 textarea::placeholder {
-	color: var(--vscode-input-placeholderForeground);
-}
-
-img {
-	user-select: none;
+    color: var(--vscode-input-placeholderForeground);
 }

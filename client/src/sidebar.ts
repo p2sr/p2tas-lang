@@ -122,46 +122,41 @@ export class TASSidebarProvider implements vscode.WebviewViewProvider {
             </div>
             <div id="buttons" style="display:none">
                 <div id="play-buttons">
-                    <button id="start-stop-button">Play TAS</button><button id="start-stop-raw-button">Play RAW TAS</button>
+                    <button id="start-stop-button">Play TAS</button>
+                    <button id="start-stop-raw-button">Play RAW TAS</button>
+                    <img id="restart-button" src="${restartUri}" alt="Restart">
                 </div>
-                <button id="restart-button">
-                    <img src="${restartUri}">
-                </button>
+
                 <button id="pause-resume-button">Pause TAS</button>
                 <button id="tick-advance-button">Tick advance TAS</button>
 
-                <p>Pause at tick</p>
+                <label for="pauseat-input">Pause at tick</label>
                 <div>
                     <input type="text" id="pauseat-input" placeholder="0">
-                    <button id="pauseat-button" class="unchanged" tabindex="-1">
-                        <img src="${checkmarkUri}">
-                    </button>
+                    <img id="pauseat-button" class="unchanged checkmark" tabindex="-1" src="${checkmarkUri}" alt="Apply">
                 </div>
 
-                <p>Change playback rate</p>
+                <label for="rate-input-slider">Change playback rate</label>
                 <div>
                     <div id="rate">
                         <input type="range" id="rate-input-slider" list="tickmarks" min="0" max="1" value="1" step="0.025">
                         <datalist id="tickmarks">
-                        <option value = "0" label="0">
-                        <option value = "0.25" label="0.25">
-                        <option value = "0.5" label="0.5">
-                        <option value = "0.75" label="0.75">
-                        <option value = "1" label="1">
+                            <option value = "0" label="0">
+                            <option value = "0.25" label="0.25">
+                            <option value = "0.5" label="0.5">
+                            <option value = "0.75" label="0.75">
+                            <option value = "1" label="1">
                         </datalist>
-                        <input type="text" id="rate-input-text" placeholder="1">
+                        <!-- This has an empty label to avoid accessibility issues in certain contexts -->
+                        <label for="rate-input-text"></label><input type="text" id="rate-input-text" placeholder="1">
                     </div>
-                    <button id="rate-button" class="unchanged" tabindex="-1">
-                        <img src="${checkmarkUri}">
-                    </button>
+                    <img id="rate-button" class="unchanged checkmark" tabindex="-1" src="${checkmarkUri}" alt="Apply">
                 </div>
 
-                <p>Skip to tick</p>
+                <label for="skip-input">Skip to tick</label>
                 <div>
                     <input type="text" id="skip-input" placeholder="0">
-                    <button id="skip-button" class="unchanged" tabindex="-1">
-                        <img src="${checkmarkUri}">
-                    </button>
+                    <img id="skip-button" class="unchanged checkmark" tabindex="-1" src="${checkmarkUri}" alt="Apply">
                 </div>
             </div>
 
