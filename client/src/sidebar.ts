@@ -11,26 +11,26 @@ export class TASSidebarProvider implements vscode.WebviewViewProvider {
     }
 
     public resolveWebviewView(
-		webviewView: vscode.WebviewView,
-		context: vscode.WebviewViewResolveContext,
-		_token: vscode.CancellationToken,
-	) {
-		this._view = webviewView;
+        webviewView: vscode.WebviewView,
+        context: vscode.WebviewViewResolveContext,
+        _token: vscode.CancellationToken,
+    ) {
+        this._view = webviewView;
 
-		webviewView.webview.options = {
-			// Allow scripts in the webview
-			enableScripts: true,
-			localResourceRoots: [
+        webviewView.webview.options = {
+            // Allow scripts in the webview
+            enableScripts: true,
+            localResourceRoots: [
                 vscode.Uri.joinPath(this._extensionUri, "css"),
                 vscode.Uri.joinPath(this._extensionUri, "client", "src"),
                 vscode.Uri.joinPath(this._extensionUri, "images")
             ]
-		};
+        };
 
-		webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
+        webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
 
         webviewView.webview.onDidReceiveMessage(data => {
-			switch (data.type) {
+            switch (data.type) {
                 case 'connect':
                     this.server.connect();
                     break;
@@ -53,7 +53,7 @@ export class TASSidebarProvider implements vscode.WebviewViewProvider {
                     this.server.requestStatePaused();
                     break;
                 case 'fastForward':
-                    this.server.requestFastForward(data.tick, true);
+                    this.server.requestFastForward(data.tick, data.pauseAfter);
                     break;
                 case 'nextPause':
                     this.server.requestNextPauseTick(data.tick);
@@ -64,31 +64,51 @@ export class TASSidebarProvider implements vscode.WebviewViewProvider {
                 case 'disconnect':
                     this.server.disconnect();
                     break;
-			}
-		});
+            }
+        });
 
         this._view?.webview.postMessage({reset: 1});
     }
 
     private _getHtmlForWebview(webview: vscode.Webview) {
-        const styleVSCodeUri = webview.asWebviewUri(
-            vscode.Uri.joinPath(this._extensionUri, "css", "vscode.css")
-        );
-
         const styleResetUri = webview.asWebviewUri(
             vscode.Uri.joinPath(this._extensionUri, "css", "reset.css")
+        );
+
+        const styleVSCodeUri = webview.asWebviewUri(
+            vscode.Uri.joinPath(this._extensionUri, "css", "vscode.css")
         );
 
         const scriptUri = webview.asWebviewUri(
             vscode.Uri.joinPath(this._extensionUri, "client", "src", "sidebarScript.js")
         );
 
-        const checkmarkUri = webview.asWebviewUri(
-            vscode.Uri.joinPath(this._extensionUri, "images", "checkmark.svg")
+        const connectUri = webview.asWebviewUri(
+            vscode.Uri.joinPath(this._extensionUri, "images", "connect.svg")
         );
 
-        const restartUri = webview.asWebviewUri(
-            vscode.Uri.joinPath(this._extensionUri, "images", "restart.svg")
+        const playUri = webview.asWebviewUri(
+            vscode.Uri.joinPath(this._extensionUri, "images", "play.svg")
+        );
+
+        const pauseUri = webview.asWebviewUri(
+            vscode.Uri.joinPath(this._extensionUri, "images", "pause.svg")
+        );
+
+        const stopUri = webview.asWebviewUri(
+            vscode.Uri.joinPath(this._extensionUri, "images", "stop.svg")
+        );
+
+        const replayUri = webview.asWebviewUri(
+            vscode.Uri.joinPath(this._extensionUri, "images", "replay.svg")
+        );
+
+        const applyUri = webview.asWebviewUri(
+            vscode.Uri.joinPath(this._extensionUri, "images", "apply.svg")
+        );
+
+        const linkUri = webview.asWebviewUri(
+            vscode.Uri.joinPath(this._extensionUri, "images", "link.svg")
         );
 
         // Use a nonce to only allow a specific script to be run.
@@ -108,55 +128,72 @@ export class TASSidebarProvider implements vscode.WebviewViewProvider {
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <link href="${styleResetUri}" rel="stylesheet">
             <link href="${styleVSCodeUri}" rel="stylesheet">
+            <title>P2-TAS</title>
         </head>
         <body>
-            <div>
-                <h2 id="status">Disconnected</h2>
-                <button id="connect-button">Connect</button>
+            <div id="connection">
+                <div id="server-data">
+                    <p>Status: <span id="data-status">Inactive</span></p>
+                    <p>Playback rate: <span id="data-rate">1.0</span></p>
+                    <p>Current tick: <span id="data-tick">0</span></p>
+                </div>
+                <img id="connect-button" class="heavy-button disconnected" src="${connectUri}" alt="Connect">
             </div>
-            <div id="server-data" style="display:none">
-                <h2>Server data</h2>
-                <p>Playback: <span id="data-status">Inactive</span></p>
-                <p>Playback rate: <span id="data-rate">1.0</span></p>
-                <p>Current tick: <span id="data-tick">0</span></p>
-            </div>
-            <div id="buttons" style="display:none">
+
+            <div id="buttons">
                 <div id="play-buttons">
-                    <button id="start-stop-button">Play TAS</button>
-                    <button id="start-stop-raw-button">Play RAW TAS</button>
-                    <img id="restart-button" src="${restartUri}" alt="Restart">
+                    <img id="stop-button" src="${stopUri}" alt="Stop">
+                    <!-- data-src-play and data-src-pause are used in the script to chanage the src of the image to the appropriate uri -->
+                    <img id="start-button" class="heavy-button" src="${playUri}" alt="Play" data-src-play="${playUri}" data-src-pause="${pauseUri}">
+                    <img id="replay-button" src="${replayUri}" alt="Replay">
                 </div>
 
-                <button id="pause-resume-button">Pause TAS</button>
-                <button id="tick-advance-button">Tick advance TAS</button>
-
-                <label for="pauseat-input">Pause at tick</label>
-                <div>
-                    <input type="text" id="pauseat-input" placeholder="0">
-                    <img id="pauseat-button" class="unchanged checkmark" tabindex="-1" src="${checkmarkUri}" alt="Apply">
+                <div id="mode-select">
+                    <div class="highlight"></div> <!-- A separate block element used to show the active option -->
+                    <span id="normal-playback">Normal</span>
+                    <span id="raw-playback">Raw</span>
                 </div>
 
-                <label for="rate-input-slider">Change playback rate</label>
+                <button id="tick-advance-button">Tick advance</button>
+
                 <div>
-                    <div id="rate">
-                        <input type="range" id="rate-input-slider" list="tickmarks" min="0" max="1" value="1" step="0.025">
-                        <datalist id="tickmarks">
-                            <option value = "0" label="0">
-                            <option value = "0.25" label="0.25">
-                            <option value = "0.5" label="0.5">
-                            <option value = "0.75" label="0.75">
-                            <option value = "1" label="1">
-                        </datalist>
-                        <!-- This has an empty label to avoid accessibility issues in certain contexts -->
-                        <label for="rate-input-text"></label><input type="text" id="rate-input-text" placeholder="1">
+                    <label for="rate-input-slider">Playback rate</label>
+                    <div class="input">
+                        <div id="rate">
+                            <input type="range" id="rate-input-slider" list="tickmarks" min="0" max="1" value="1" step="0.025">
+                            <datalist id="tickmarks">
+                                <option value = "0" label="0">
+                                <option value = "0.25" label="0.25">
+                                <option value = "0.5" label="0.5">
+                                <option value = "0.75" label="0.75">
+                                <option value = "1" label="1">
+                            </datalist>
+    
+                            <!-- This has an empty label to avoid accessibility issues in certain contexts -->
+                            <label for="rate-input-text"></label>
+                            <input type="text" id="rate-input-text" placeholder="1">
+                        </div>
+                        <img id="rate-button" class="unchanged checkmark" tabindex="-1" src="${applyUri}" alt="Apply">
                     </div>
-                    <img id="rate-button" class="unchanged checkmark" tabindex="-1" src="${checkmarkUri}" alt="Apply">
                 </div>
 
-                <label for="skip-input">Skip to tick</label>
-                <div>
-                    <input type="text" id="skip-input" placeholder="0">
-                    <img id="skip-button" class="unchanged checkmark" tabindex="-1" src="${checkmarkUri}" alt="Apply">
+                <div id="tick-control">
+                    <label for="skip-input">Skip to tick</label>
+                    <div class="input">
+                        <input type="text" id="skip-input" placeholder="0">
+                        <img id="skip-button" class="unchanged checkmark" tabindex="-1" src="${applyUri}" alt="Apply">
+                    </div>
+
+                    <div id="link">
+                        <img src="${linkUri}" alt="Link">
+                        <div id="link-disabled" class="invisible"></div>
+                    </div>
+
+                    <label for="pauseat-input">Pause at tick</label>
+                    <div class="input">
+                        <input type="text" id="pauseat-input" placeholder="0" disabled>
+                        <img id="pauseat-button" class="unchanged checkmark" tabindex="-1" src="${applyUri}" alt="Apply">
+                    </div>
                 </div>
             </div>
 

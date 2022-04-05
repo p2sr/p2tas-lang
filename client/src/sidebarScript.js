@@ -3,22 +3,22 @@
 
 const vscode = acquireVsCodeApi();
 
-const defaultButtonBackground = getComputedStyle((document.querySelector(":root"))).getPropertyValue("--vscode-button-background");
-
-const socketStatusText = document.querySelector("#status");
-
 const dataStatusText = document.querySelector("#data-status");
 const dataRateText = document.querySelector("#data-rate");
 const dataTickText = document.querySelector("#data-tick");
 
-const dataDiv = document.querySelector("#server-data");
+const connectButton = document.querySelector("#connect-button");
+
 const buttonsDiv = document.querySelector("#buttons");
 
-const connectButton = document.querySelector("#connect-button");
-const playToolsButton = document.querySelector("#start-stop-button");
-const playRawButton = document.querySelector("#start-stop-raw-button");
-const restartButton = document.querySelector("#restart-button");
-const pauseButton = document.querySelector("#pause-resume-button");
+const playButton = document.querySelector("#start-button");
+const stopButton = document.querySelector("#stop-button");
+const replayButton = document.querySelector("#replay-button");
+
+const playbackHighlight = document.querySelector("#mode-select .highlight");
+const normalPlaybackButton = document.querySelector("#normal-playback");
+const rawPlaybackButton = document.querySelector("#raw-playback");
+
 const tickAdvanceButton = document.querySelector("#tick-advance-button");
 const rateButton = document.querySelector("#rate-button");
 const rateSlider = document.querySelector("#rate-input-slider");
@@ -28,46 +28,63 @@ const skipBox = document.querySelector("#skip-input");
 const pauseatButton = document.querySelector("#pauseat-button");
 const pauseatBox = document.querySelector("#pauseat-input");
 
-// Values for storing playback data
+const linkButton = document.querySelector("#link");
+const linkIndicator = document.querySelector("#link-disabled");
+
+// Runtime data
+let connected = false;
+let rawPlayback = false;
+let pauseatSkipLink = true;
+
 let playbackRate = rateBox.value;
 let skipToTick = skipBox.value;
 let pauseAtTick = pauseatBox.value;
 
 connectButton.addEventListener('click', () => {
-    if (connectButton.innerText === "Connect") {
-        vscode.postMessage({ type: 'connect' });
-    } else {
+    if (connected) {
         vscode.postMessage({ type: 'disconnect' });
-    }
-});
-
-playToolsButton.addEventListener('click', () => {
-    if (dataStatusText.innerText === "Inactive") {
-        vscode.postMessage({ type: 'playToolsTAS' });
     } else {
-        vscode.postMessage({ type: 'stopTAS' });
+        vscode.postMessage({ type: 'connect' });
     }
 });
 
-playRawButton.addEventListener('click', () => {
+playButton.addEventListener('click', () => {
     if (dataStatusText.innerText === "Inactive") {
-        vscode.postMessage({ type: 'playRawTAS' });
-    } else {
-        vscode.postMessage({ type: 'stopTAS' });
-    }
-});
-
-restartButton.addEventListener('click', () => {
-    vscode.postMessage({ type: 'stopTAS' });
-    vscode.postMessage({ type: 'playTAS' });
-});
-
-pauseButton.addEventListener('click', () => {
-    if (dataStatusText.innerText === "Playing") {
+        // Not playing, start a new playback
+        // Check whether to start a normal or raw playback
+        if (rawPlayback) vscode.postMessage({ type: 'playRawTAS' });
+        else vscode.postMessage({ type: 'playToolsTAS' });
+    } else if (dataStatusText.innerText === "Playing") {
+        // Playing, pause the playback
         vscode.postMessage({ type: 'pauseTAS' });
     } else if (dataStatusText.innerText === "Paused") {
+        // Paused, resume the playback
         vscode.postMessage({ type: 'resumeTAS' });
     }
+});
+
+stopButton.addEventListener('click', () => {
+    vscode.postMessage({ type: 'stopTAS' });
+});
+
+replayButton.addEventListener('click', () => {
+    vscode.postMessage({ type: 'stopTAS' });
+
+    if (rawPlayback) {
+        vscode.postMessage({ type: 'playRawTAS' });
+    } else {
+        vscode.postMessage({ type: 'playToolsTAS' });
+    }
+});
+
+normalPlaybackButton.addEventListener('click', () => {
+    rawPlayback = false;
+    playbackHighlight.style.left = "";
+});
+
+rawPlaybackButton.addEventListener('click', () => {
+    rawPlayback = true;
+    playbackHighlight.style.left = "50%";
 });
 
 tickAdvanceButton.addEventListener('click', () => {
@@ -75,10 +92,9 @@ tickAdvanceButton.addEventListener('click', () => {
 });
 
 rateSlider.addEventListener('input', () => {
-    // First, set the input field to have the same value as the slider
-    rateBox.value = +rateSlider.value;
+    rateBox.value = rateSlider.value;
 
-    /* 
+    /*
      * Initially, the slider would automatically submit the new value to the server
      * immediately after change. However, me and rainboww both think it is a better
      * idea to wait with sending the new value to the server until the user presses
@@ -91,9 +107,7 @@ rateSlider.addEventListener('input', () => {
 });
 
 rateSlider.addEventListener('mouseup', event => {
-    if (event.button != 0) return;
-    // First, set the input field to have the same value as the slider
-    rateBox.value = +rateSlider.value;
+    if (event.button !== 0) return;
 
     // Then, set the visibility of the checkmark for the user to confirm the change
     if (rateBox.value !== playbackRate) { // Check if value has changed
@@ -119,9 +133,10 @@ rateBox.addEventListener('keyup', key => {
 
 rateButton.addEventListener('click', () => {
     changeRate();
-    rateButton.classList.add("unchanged"); // Hide set button
-    rateButton.tabIndex = -1; // Make set button untabbable
-    document.activeElement.blur(); // Remove focus from button
+});
+
+rateButton.addEventListener('keyup', key => {
+    if (key.code === "Enter") changeRate();
 });
 
 skipBox.addEventListener('keyup', key => {
@@ -138,9 +153,10 @@ skipBox.addEventListener('keyup', key => {
 
 skipButton.addEventListener('click', () => {
     fastForward();
-    skipButton.classList.add("unchanged"); // Hide set button
-    skipButton.tabIndex = -1; // Make set button untabbable
-    document.activeElement.blur(); // Remove focus from button
+});
+
+skipButton.addEventListener('keyup', key => {
+    if (key.code === "Enter") fastForward();
 });
 
 pauseatBox.addEventListener('keyup', key => {
@@ -157,9 +173,26 @@ pauseatBox.addEventListener('keyup', key => {
 
 pauseatButton.addEventListener('click', () => {
     nextPause();
-    pauseatButton.classList.add("unchanged"); // Hide set button
-    pauseatButton.tabIndex = -1; // Make set button untabbable
-    document.activeElement.blur(); // Remove focus from button
+});
+
+pauseatButton.addEventListener('keyup', key => {
+    if (key.code === "Enter") nextPause();
+});
+
+linkButton.addEventListener('click', () => {
+    pauseatSkipLink = !pauseatSkipLink;
+
+    if (pauseatSkipLink) {
+        // Update UI
+        linkIndicator.classList.add("invisible");
+        pauseatBox.disabled = true;
+
+        // Sync values
+        fastForward();
+    } else {
+        linkIndicator.classList.remove("invisible");
+        pauseatBox.disabled = false;
+    }
 });
 
 // Attempt to restore state
@@ -177,97 +210,128 @@ window.addEventListener('message', event => {
 function handleMessage(message) {
     // Reset UI
     if (message.reset === null) {
-        socketStatusText.style.color = "var(--vscode-charts-red)";
-        socketStatusText.innerText = "Disconnected";
-        connectButton.innerText = "Connect";
-        dataDiv.style.display = "none";
         buttonsDiv.style.display = "none";
         return;
     }
 
+    // Set visibility of buttons
     if (message.connected) {
-        socketStatusText.style.color = "var(--vscode-charts-green)";
-        socketStatusText.innerText = "Connected";
-        connectButton.innerText = "Disconnect";
-        dataDiv.style.display = "";
+        connectButton.classList.remove("disconnected");
         buttonsDiv.style.display = "flex";
     } else {
-        socketStatusText.style.color = "var(--vscode-charts-red)";
-        socketStatusText.innerText = "Disconnected";
-        connectButton.innerText = "Connect";
-        dataDiv.style.display = "none";
+        connectButton.classList.add("disconnected");
         buttonsDiv.style.display = "none";
     }
 
+    // Store connection status
+    connected = message.connected;
+
+    // Display server status
     dataStatusText.innerText = message.state;
     dataRateText.innerText = message.rate;
     dataTickText.innerText = message.currentTick;
 
+    // Check message state
     switch (message.state) {
         case "Inactive":
-            playToolsButton.innerText = "Play TAS";
-            pauseButton.innerText = "Pause TAS";
+            setPlayImage(false);
 
-            pauseButton.disabled = true;
-            pauseButton.style.backgroundColor = "#444444";
             tickAdvanceButton.disabled = true;
-            tickAdvanceButton.style.backgroundColor = "#444444";
+            tickAdvanceButton.style.disabled = true;
+
+            dataTickText.innerText = "N/A";
 
             dataStatusText.style.color = "var(--vscode-charts-lines)";
+            dataRateText.style.color = "";
+            dataTickText.style.color = "var(--vscode-charts-lines)";
             break;
 
         case "Playing":
-            playToolsButton.innerText = "Stop TAS";
-            pauseButton.innerText = "Pause TAS";
+            setPlayImage(true);
 
-            pauseButton.disabled = false;
-            pauseButton.style.background = defaultButtonBackground;
             tickAdvanceButton.disabled = true;
-            tickAdvanceButton.style.backgroundColor = "#444444";
+            tickAdvanceButton.style.disabled = true;
 
             dataStatusText.style.color = "var(--vscode-charts-green)";
+            dataRateText.style.color = "";
+            dataTickText.style.color = "";
             break;
 
         case "Paused":
-            playToolsButton.innerText = "Stop TAS";
-            pauseButton.innerText = "Resume TAS";
+            setPlayImage(false);
 
-            pauseButton.disabled = false;
-            pauseButton.style.background = defaultButtonBackground;
             tickAdvanceButton.disabled = false;
-            tickAdvanceButton.style.backgroundColor = defaultButtonBackground;
+            tickAdvanceButton.style.disabled = false;
 
             dataStatusText.style.color = "var(--vscode-charts-yellow)";
+            dataRateText.style.color = "";
+            dataTickText.style.color = "";
             break;
 
         case "Skipping":
-            playToolsButton.innerText = "Stop TAS";
-            pauseButton.innerText = "Pause TAS";
+            setPlayImage(true);
 
-            pauseButton.disabled = false;
-            pauseButton.style.background = defaultButtonBackground;
             tickAdvanceButton.disabled = true;
-            tickAdvanceButton.style.backgroundColor = "#444444";
+            tickAdvanceButton.style.disabled = true;
 
             dataStatusText.style.color = "var(--vscode-charts-blue)";
+            dataRateText.style.color = "";
+            dataTickText.style.color = "";
             break;
+    }
+
+    // Check if the server is disconnected
+    if (!message.connected) {
+        // Display server status
+        dataStatusText.innerText = "Disconnected";
+        dataRateText.innerText = "N/A";
+        dataTickText.innerText = "N/A";
+
+        // Set status styling
+        dataStatusText.style.color = "var(--vscode-charts-red)";
+        dataRateText.style.color = "var(--vscode-charts-lines)";
+        dataTickText.style.color = "var(--vscode-charts-lines)";
     }
 }
 
 function changeRate() {
-    rate = +rateBox.value;
+    let rate = +rateBox.value;
     vscode.postMessage({ type: 'changeRate', rate: rate });
     playbackRate = rateBox.value;
+    unfocusButton(rateButton);
 }
 
 function fastForward() {
-    tick = +skipBox.value;
-    vscode.postMessage({ type: 'fastForward', tick: tick });
+    let tick = +skipBox.value;
+    vscode.postMessage({ type: 'fastForward', tick: tick, pauseAfter: pauseatSkipLink });
     skipToTick = skipBox.value;
+
+    // Set pauseat if linked
+    if (pauseatSkipLink) {
+        pauseAtTick = skipBox.value;
+        pauseatBox.value = skipBox.value;
+    }
+
+    unfocusButton(skipButton);
 }
 
 function nextPause() {
-    tick = +pauseatBox.value;
+    let tick = +pauseatBox.value;
     vscode.postMessage({ type: 'nextPause', tick: tick });
     pauseAtTick = pauseatBox.value;
+    unfocusButton(pauseatButton);
+}
+
+function setPlayImage(playing) {
+    if (playing) {
+        playButton.src = playButton.getAttribute("data-src-pause");
+    } else {
+        playButton.src = playButton.getAttribute("data-src-play");
+    }
+}
+
+function unfocusButton(button) {
+    button.classList.add("unchanged"); // Hide button
+    button.tabIndex = -1; // Make button untabbable
+    document.activeElement.blur(); // Remove focus from button
 }

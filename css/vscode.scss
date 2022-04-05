@@ -1,0 +1,357 @@
+/* NOTE: MIGRATING FROM CSS TO SCSS
+ * Seeing as I am the one doing most of the work on the sidebar styling,
+ * I decided it was time to make the switch to scss to keep my own
+ * sanity. Scss is a superset of css, which you can read more about at
+ * https://sass-lang.com/.
+ *
+ * What this means for you is to make sure you are transpiling the scss
+ * stylesheet to css. If you want to make a change to the stylesheet, run
+ * the following commands:
+ *
+ * One time (install the sass binaries):
+ * npm install -g sass
+ *
+ * Every time you are working on the stylesheet:
+ * sass -w css/vscode.scss:css/vscode.css -s compressed --no-source-map
+ * Run this command from the project root folder.
+ *
+ * -w (or --watch) puts the command in watch mode, meaning it will recompile every
+ * time you make a change to the source file.
+ *
+ * css/vscode.scss:css/vscode.css are the input and output files, separated by a colon.
+ *
+ * -s compressed (or --style compressed) also minifies the outputted .css file
+ * (removing all whitespace and comments), meaning it will load faster in production.
+ *
+ * --no-source-map stops the command from generating source maps
+ * (https://sass-lang.com/documentation/cli/dart-sass#source-maps),
+ * which to my knowledge don't work in vscode anyway.
+ *
+ * Make sure to never edit the .css file, as changes to this file WILL BE OVERWRITTEN
+ * the next time the sass file is transpiled.
+ *
+ * - Soni
+ */
+
+/* STYLESHEET TABLE OF CONTENTS
+ - I need this in order to not completely lose my mind while working on this lmao - Soni
+    1 Variables
+        1.1 Spacing
+        1.2 Colors
+        1.3 Misc.
+    2 General styling
+    3 Element specific styling
+    4 Section styling
+        4.1 Connection data
+        4.2 Buttons
+            4.2.1 Media controls
+            4.2.2 Mode select
+            4.2.3 Playback rate
+            4.2.4 Tick control
+    5 Utility classes
+ */
+
+// 1.1 Spacing
+$container-padding: 20px;
+$vertical-spacing: 20px;
+$horizontal-spacing: 4px;
+$input-padding: 6px;
+$play-button-size: 30px;
+$play-button-spacing: 12px;
+$connect-button-size: 25px;
+
+// 1.2 Colors
+$foreground: var(--vscode-editor-foreground);
+$background: var(--vscode-editor-background);
+$button-foreground: var(--vscode-button-foreground);
+$button-background: var(--vscode-button-background);
+$button-background-disabled: var(--vscode-button-secondaryBackground);
+$input-foreground: var(--vscode-input-foreground);
+$input-background: var(--vscode-input-background);
+$placeholder: var(--vscode-input-placeholderForeground);
+$outline: var(--vscode-focusBorder);
+$hover: var(--vscode-button-hoverBackground);
+$connected: var(--vscode-charts-green);
+$disconnected: var(--vscode-charts-red);
+
+// 1.3 Misc.
+$font: var(--vscode-font-family);
+$transition: .2s cubic-bezier(0.34, 0.12, 0.07, 1.17);
+
+// 2 General styling
+body
+{
+    display: flex;
+    flex-direction: column;
+    gap: $vertical-spacing;
+    padding: $container-padding;
+    background: $background;
+}
+
+*:focus
+{
+    outline-color: $outline !important;
+}
+
+// 3 Element specific styling
+button
+{
+    padding: $input-padding;
+    color: $button-foreground;
+    background: $button-background;
+    border: none;
+    outline: 1px solid transparent;
+    outline-offset: 2px !important;
+    text-align: center;
+    cursor: pointer;
+
+    &:hover
+    {
+        background: $hover;
+    }
+
+    &:focus
+    {
+        outline-color: $outline;
+    }
+
+    &[disabled] // This gets toggled in the JS
+    {
+        background: $button-background-disabled;
+        cursor: not-allowed;
+    }
+}
+
+input
+{
+    width: 100%;
+    padding: $input-padding;
+    color: $input-foreground;
+    background: $input-background;
+    border: none;
+    font-family: $font;
+}
+
+::placeholder
+{
+    color: $placeholder;
+}
+
+// 4.1 Connection data
+#connection
+{
+    display: flex;
+    justify-content: space-between;
+
+    #connect-button
+    {
+        background: $connected;
+        height: $connect-button-size;
+        padding: .7rem;
+
+        &.disconnected  // This gets toggled in the JS
+        {
+            background: $disconnected;
+        }
+    }
+}
+
+// 4.2 Buttons
+#buttons
+{
+    flex-direction: column;
+    gap: $vertical-spacing;
+
+    // 4.2.1 Media controls
+    #play-buttons
+    {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: $play-button-spacing;
+
+        img
+        {
+            height: $play-button-size;
+            cursor: pointer;
+            transition: $transition;
+
+            &:active
+            {
+                transform: scale(.9);
+            }
+        }
+
+        img:not(#start-button):hover
+        {
+            filter: brightness(.7);
+        }
+    }
+
+    // 4.2.2 Mode select
+    #mode-select
+    {
+        display: flex;
+        align-items: center;
+        position: relative;
+        padding: $input-padding;
+        background: $input-background;
+
+        .highlight
+        {
+            position: absolute;
+            top: $input-padding;
+            left: $input-padding;
+            width: calc(50% - #{$input-padding});
+            height: calc(100% - 2 * #{$input-padding});
+            background: $button-background;
+            transition: $transition;
+        }
+
+        span
+        {
+            width: 100%;
+            padding: $input-padding;
+            color: $button-foreground;
+            text-align: center;
+            cursor: pointer;
+            z-index: 0;
+        }
+    }
+
+    // 4.2.3 Playback rate
+    #rate
+    {
+        display: flex;
+        width: 100%;
+        height: 28px;
+
+        #rate-input-slider
+        {
+            width: 100%;
+            margin-right: $horizontal-spacing;
+        }
+
+        #rate-input-text
+        {
+            width: 3rem;
+            text-align: center;
+        }
+    }
+
+    // 4.2.4 Tick control
+    #tick-control
+    {
+        $vertical-spacing: $horizontal-spacing * 2; // Set different vertical spacing inside #tick-control
+
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        align-items: center;
+        gap: $vertical-spacing $horizontal-spacing;
+        position: relative;
+
+        #link
+        {
+            display: grid; // I have no idea why this is here, but the positioning gets fucked if it isn't - Soni
+            grid-row: 1/3;
+            grid-column: 3;
+            position: relative;
+            width: 25px;
+            padding: 4px 0;
+            background: $background;
+            cursor: pointer;
+            transition: $transition;
+
+            #link-disabled
+            {
+                position: absolute;
+                inset: 6px 11px; // I hope this works on all platforms, but I have a sneaking suspicion it will break down the line - Soni
+                background: $foreground;
+                outline: 2px solid $background;
+                border-radius: 1rem;
+                opacity: 1;
+                transform: rotate(45deg);
+                transition: opacity .2s ease,
+                            inset .4s ease;
+
+                &.invisible // This gets toggled in the JS
+                {
+                    inset: 16px 11px;
+                    opacity: 0;
+                    transition: opacity .2s ease .2s,
+                                inset .4s ease;
+                }
+            }
+
+            &:active
+            {
+                transform: scale(.9);
+            }
+        }
+
+        &::after
+        {
+            content: '';
+            display: block;
+            position: absolute;
+            inset: 12px;
+            left: calc(100% - 24px);
+            border: 1px solid $foreground;
+            border-left: none;
+            z-index: -1;
+        }
+
+        [disabled]
+        {
+            opacity: .5;
+            cursor: not-allowed;
+        }
+    }
+}
+
+// 5 Utility classes
+.input
+{
+    display: flex;
+
+    img.checkmark
+    {
+        height: calc(1em + 4px);
+        aspect-ratio: 1;
+        margin-left: 4px;
+        padding: $input-padding;
+        background: $button-background;
+        outline: 1px solid transparent;
+        outline-offset: 2px !important;
+        transition: $transition;
+        box-sizing: content-box;
+    }
+
+    img.unchanged
+    {
+        width: 0;
+        margin: 0;
+        padding: $input-padding 0;
+    }
+}
+
+.heavy-button
+{
+    height: $play-button-size;
+    padding: 1rem;
+    background: $button-background;
+    border-radius: 50%;
+    box-sizing: initial;
+    cursor: pointer;
+    transition: $transition;
+
+    &:hover
+    {
+        background: $hover;
+    }
+
+    &:active
+    {
+        transform: scale(.9);
+    }
+}

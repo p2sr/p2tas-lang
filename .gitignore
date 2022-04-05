@@ -4,3 +4,4 @@ node_modules
 **/out
 client/server
 .vscode-test
+/.idea/

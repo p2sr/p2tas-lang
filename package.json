@@ -120,7 +120,7 @@
                 {
                     "id": "p2tas-sidebar-view",
                     "title": "TAS integration",
-                    "icon": "images/play.svg"
+                    "icon": "images/sidebar-icon.svg"
                 }
             ]
         },
@@ -130,7 +130,7 @@
                     "type": "webview",
                     "id": "p2tas-sidebar",
                     "name": "P2-TAS",
-                    "icon": "images/play.svg",
+                    "icon": "images/sidebar-icon.svg",
                     "contextualTitle": "TAS integration"
                 }
             ]
