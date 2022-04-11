@@ -85,24 +85,32 @@ function parseStartStatement(lineText: string, line: number, collector: Diagnost
         collector.addDiagnosticToLine(line, lastCharacter, "Expected start type");
     }
     else if (args.length >= 2) {
-        const startType = startTypes[args[1]];
-        if (startType) {
-            if (!(startType.hasArgument || false)) {
-                if (args.length > 2) {
-                    collector.addDiagnosticToLine(line, firstCharacter + args[0].length + args[1].length + 2, "Ignored start parameters", DiagnosticSeverity.Warning);
+        let typeOff = firstCharacter + args[0].length + 1;
+        let typePos = 1;
+        if (args[1] === "next") {
+            typeOff += args[1].length + 1;
+            typePos = 2;
+        }
+        if (args.length > typePos) {
+            const startType = startTypes[args[typePos]];
+            if (startType) {
+                if (!(startType.hasArgument || false)) {
+                    if (args.length > typePos + 1) {
+                        collector.addDiagnosticToLine(line, typeOff + args[typePos].length + 1, "Ignored start parameters", DiagnosticSeverity.Warning);
+                    }
+                }
+                else {
+                    if (args.length > typePos + 2) {
+                        collector.addDiagnosticToLine(line, typeOff + args[typePos].length + args[typePos+1].length + 2, "Ignored start parameters", DiagnosticSeverity.Warning);
+                    }
+                    else if (args.length === typePos + 1) {
+                        collector.addDiagnosticToLine(line, lastCharacter, "Expected argument");
+                    }
                 }
             }
             else {
-                if (args.length > 3) {
-                    collector.addDiagnosticToLine(line, firstCharacter + args[0].length + args[1].length + args[2].length + 3, "Ignored start parameters", DiagnosticSeverity.Warning);
-                }
-                else if (args.length === 2) {
-                    collector.addDiagnosticToLine(line, lastCharacter, "Expected argument");
-                }
+                collector.addDiagnosticToLine(line, typeOff, "Invalid start type");
             }
-        }
-        else {
-            collector.addDiagnosticToLine(line, firstCharacter + args[0].length + 1, "Invalid start type");
         }
     }
 

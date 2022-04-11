@@ -64,9 +64,6 @@ export const startTypes: StartTypes = {
     now: {
         description: "Starts playing the TAS immediately, or as soon as a session is started."
     },
-    next: {
-        description: "Starts playing the TAS on the next session start."
-    }
 }
 
 export type CompletionItemDeclaration = { name: string, description: string };
