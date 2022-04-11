@@ -1,8 +1,18 @@
 {
 	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
 	"name": "Portal 2 TAS script",
-	"patterns": [{"include": "#start"}, {"include": "#framebulk"}, {"include": "#loop"}],
+	"patterns": [{"include": "#version"}, {"include": "#start"}, {"include": "#framebulk"}, {"include": "#loop"}],
 	"repository": {
+		"version": {
+			"patterns": [{
+				"name": "tas_version",
+				"match": "^\\s*(version)(?:\\s+|$)([0-9]+)?",
+				"captures": {
+					"1": {"name": "keyword.control"},
+					"2": {"name": "constant.numeric"}
+				}
+			}]
+		},
 		"start": {
 			"patterns": [{
 				"name": "start_tas",

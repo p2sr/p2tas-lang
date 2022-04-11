@@ -3,7 +3,7 @@ import { TASTool } from "./tasTool";
 import { CommentRange, DiagnosticCollector, startTypes } from "./util";
 
 export enum LineType {
-    Start, RepeatStart, End, Framebulk, Comment
+    Version, Start, RepeatStart, End, Framebulk, Comment
 }
 
 export class ScriptLine {
@@ -40,6 +40,8 @@ export class ScriptLine {
 
 export function createScriptLine(type: LineType, lineText: string, line: number, previousLine: ScriptLine | undefined, collector: DiagnosticCollector): ScriptLine {
     switch (type) {
+        case LineType.Version:
+            return parseVersionStatement(lineText, line, collector);
         case LineType.Start:
             return parseStartStatement(lineText, line, collector);
         case LineType.RepeatStart:
@@ -59,6 +61,21 @@ export function createScriptLine(type: LineType, lineText: string, line: number,
 // - the last non-whitespace character index
 function getParts(text: string): [string[], number, number] {
     return [text.trim().split(' '), text.match(/\S/)?.index || 0, text.match(/\S(?=\s*$)/)?.index || text.length - 1];
+}
+
+function parseVersionStatement(lineText: string, line: number, collector: DiagnosticCollector): ScriptLine {
+    const max_version_number = 2;
+    const [args, firstCharacter, lastCharacter] = getParts(lineText);
+    if (args.length != 2) {
+        collector.addDiagnosticToLine(line, firstCharacter + args[0].length + 1, "Expected version number");
+    } else {
+        const num = +args[1];
+        if (num < 1 || num > max_version_number || num % 1 !== 0) {
+            collector.addDiagnosticToLine(line, firstCharacter + args[0].length + 1, `Expected version number between 1 and ${max_version_number}`);
+        }
+    }
+
+    return new ScriptLine(lineText, LineType.Version, -1);
 }
 
 function parseStartStatement(lineText: string, line: number, collector: DiagnosticCollector): ScriptLine {

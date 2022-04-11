@@ -10,6 +10,7 @@ export class TASScript {
 
         const diagnosticCollector = new DiagnosticCollector();
         let didFindStart = false;
+        let didFindVersion = false;
 
         let index = 0;
         let currentLine = 0;
@@ -38,6 +39,23 @@ export class TASScript {
                 this.lines.push(new ScriptLine(fullLineText, LineType.Comment, previousLine.absoluteTick, undefined, previousLine.activeTools, commentRange));
                 currentLine++;
                 continue;
+            }
+
+            if (trimmedLineText.startsWith("version")) {
+                if (didFindVersion) {
+                    diagnosticCollector.addDiagnosticToLine(currentLine, 0, "Multiple version lines found");
+                } else {
+                    const line = createScriptLine(LineType.Version, lineText, currentLine, previousLine, diagnosticCollector);
+                    line.commentRange = commentRange;
+                    this.lines.push(line);
+                }
+
+                didFindVersion = true;
+                currentLine++;
+                continue;
+            } else if (!didFindVersion) {
+                diagnosticCollector.addDiagnosticToLine(currentLine, 0, "Expected 'version' statement");
+                didFindVersion = true;
             }
 
             if (trimmedLineText.startsWith("start")) {
