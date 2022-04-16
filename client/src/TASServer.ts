@@ -58,12 +58,17 @@ export class TASServer {
     //                 Sending data
     // ----------------------------------------------
 
-    requestToolsPlayback() {
-        var filename = vscode.window.activeTextEditor?.document?.fileName;
+    async requestToolsPlayback() {
+        const document = vscode.window.activeTextEditor?.document
+
+        await document?.save();
+
+        var filename = document?.fileName;
         if(filename === undefined) return;
         this.requestPlayback(filename);
     }
     requestRawPlayback() {
+        // No need to save for raw, the file should already be generated
         var filename = vscode.window.activeTextEditor?.document?.fileName;
         if(filename === undefined) return;
 
