@@ -36,7 +36,7 @@ export class TASScript {
                     this.expectNumber("Invalid version", 1, 2);
                     this.expectCount("Ignored parameters", 2);
 
-                    this.lines.push(new ScriptLine(-1, false, LineType.Version));
+                    this.lines.push(new ScriptLine(-1, false, LineType.Version, this.tokens[this.lineIndex]));
                     state = ParserState.Start;
                     break;
                 case ParserState.Start:
@@ -66,7 +66,7 @@ export class TASScript {
                         }
                     }
 
-                    this.lines.push(new ScriptLine(-1, false, LineType.Start));
+                    this.lines.push(new ScriptLine(-1, false, LineType.Start, this.tokens[this.lineIndex]));
                     state = ParserState.Framebulks;
                     break;
                 case ParserState.Framebulks:
@@ -106,7 +106,8 @@ export class TASScript {
                         }
                     }
 
-                    this.lines.push(new ScriptLine(tick, isRelative, LineType.Framebulk));
+                    var absoluteTick = isRelative ? this.lines[this.lines.length - 1].tick + tick : tick;
+                    this.lines.push(new ScriptLine(absoluteTick, isRelative, LineType.Framebulk, this.tokens[this.lineIndex]));
                 default:
                     break;
             }
@@ -191,7 +192,7 @@ export class TASScript {
                             DiagnosticCollector.addDiagnostic(lastArgumentToken.line, lastArgumentToken.end, lastArgumentToken.end + 1, `Expected ${TokenType[arg.type].toLowerCase()}`);
                             break blk;
                         }
-                        if (this.expectType(`Expected ${TokenType[arg.type].toLowerCase()}`, arg.type) !== undefined) 
+                        if (this.expectType(`Expected ${TokenType[arg.type].toLowerCase()}`, arg.type) !== undefined)
                             this.validateArgument(arg);
                     }
                     else {
@@ -377,5 +378,6 @@ export class ScriptLine {
         public tick: number,
         public isRelative: boolean,
         public type: LineType,
+        public tokens: Token[],
     ) { }
 }

@@ -9,9 +9,9 @@ import {
 	InsertTextFormat,
 	MarkupKind
 } from 'vscode-languageserver/node';
-import { LineType, ScriptLine } from './tas-script/tasScript';
-
 import { TASScript } from './tas-script/tasScript';
+import { TASTool } from './tas-script/tasTool';
+import { TokenType } from './tas-script/tokenizer';
 // import { TASTool } from './_tas-script/tasTool';
 // import { CompletionItemDeclaration, endCompletion, startCompletion, startTypes } from './_tas-script/util';
 
@@ -22,7 +22,7 @@ connection.onInitialize((params: InitializeParams) => {
 	return {
 		capabilities: {
 			textDocumentSync: TextDocumentSyncKind.Full,
-			// hoverProvider: true,
+			hoverProvider: true,
 			// completionProvider: {
 			// 	triggerCharacters: [" ", ";"]
 			// }
@@ -32,10 +32,10 @@ connection.onInitialize((params: InitializeParams) => {
 
 connection.onDidOpenTextDocument((params) => {
 	const tasScript = new TASScript();
-	
+
 	const diagnostics = tasScript.parse(params.textDocument.text);
 	connection.sendDiagnostics({ uri: params.textDocument.uri, diagnostics });
-	
+
 	documents.set(params.textDocument.uri, tasScript);
 });
 
@@ -207,40 +207,51 @@ connection.onDidCloseTextDocument((params) => { /*documents.delete(params.textDo
 // 	return [word, requestedToolName, encounteredWords, isWordTool];
 // }
 
-// connection.onHover((params, cancellationToken, workDoneProgressReporter, resultProgressReporter) => {
-// 	const script = documents.get(params.textDocument.uri);
-// 	if (!script) return undefined;
+// FIXME: This currently works anywhere in the line, as long as you have the word (e.g. "strafe"). 
+//        However, I don't think this is a big problem so I don't care :)
+connection.onHover((params, cancellationToken, workDoneProgressReporter, resultProgressReporter) => {
+	const script = documents.get(params.textDocument.uri);
+	if (!script) return undefined;
 
-// 	const line = script.lines[params.position.line];
-// 	const lineText = line.lineText;
-// 	// Check if the cursor is before the '>' and before any comments
-// 	if (line.commentRange && line.commentRange.containsPos(params.position)) return undefined;
+	const line = script.lines[params.position.line];
+	for (var i = 0; i < line.tokens.length; i++) {
+		const token = line.tokens[i];
+		if (params.position.character >= token.start && params.position.character <= token.end) {
+			if (token.type === TokenType.Number) {
+				if (line.tokens[i + 1].type !== TokenType.RightAngle) continue;
+				return { contents: [`Tick: ${line.tick}`] };
+			}
+			else if (token.type !== TokenType.String) continue;
 
-// 	if (params.position.character < lineText.indexOf('>')) {
-// 		// Return tick count
-// 		return { contents: [`Tick: ${line.absoluteTick}`] };
-// 	}
-// 	else if (lineText.split("|").length - 1 === 4 && params.position.character > lineText.lastIndexOf('|')) {
-// 		// Return tool / argument information
-// 		const [hoveredWord, requestedToolName, _, hoveredTool] = getToolAndArgumentAtPosition(params.position.character, lineText);
+			const hoveredWord = token.text;
+			for (const tool of Object.keys(TASTool.tools)) {
+				if (tool === hoveredWord) {
+					return {
+						contents: {
+							kind: MarkupKind.Markdown,
+							value: TASTool.tools[tool].description
+						}
+					};
+				}
 
-// 		if (hoveredTool) {
-// 			if (!TASTool.tools.hasOwnProperty(hoveredWord)) return undefined;
-// 			return {
-// 				contents: TASTool.getToolDescription(hoveredWord)
-// 			};
-// 		}
-// 		else {
-// 			if (!TASTool.getToolArgument(requestedToolName, hoveredWord)) return undefined;
+				for (const argument of TASTool.tools[tool].arguments) {
+					if (argument.type !== TokenType.String) continue;
+					if (argument.text === hoveredWord) {
+						if (argument.description === undefined) break;
+						return {
+							contents: {
+								kind: MarkupKind.Markdown,
+								value: argument.description,
+							}
+						};
+					}
+				}
+			}
+		}
+	}
 
-// 			return {
-// 				contents: TASTool.getArgumentDescription(requestedToolName, hoveredWord)
-// 			};
-// 		}
-// 	}
-
-// 	return undefined;
-// });
+	return undefined;
+});
 
 // connection.onRequest("p2tas/activeTools", (params: [any, number]) => {
 // 	const [uri, lineNumber] = params;
