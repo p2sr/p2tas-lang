@@ -1,5 +1,6 @@
 import { Diagnostic } from "vscode-languageserver/node";
 import { DiagnosticCollector } from "./diagnosticCollector";
+import { TASTool } from "./tasTool";
 import { Token, tokenize, TokenType } from "./tokenizer";
 
 enum ParserState {
@@ -91,15 +92,18 @@ export class TASScript {
 
                         // Commands field
                         // Allow any number tokens until pipe or end of line
-                        this.tokenIndex++;
                         while (this.tokenIndex < this.tokens[this.lineIndex].length && this.currentToken().type !== TokenType.Pipe)
                             this.tokenIndex++;
 
                         this.tokenIndex++;
                         if (this.tokens[this.lineIndex].length <= this.tokenIndex) break blk;
-                        
+
                         // Tools field
-                        // TODO
+                        this.parseToolsField();
+                        if (this.tokens[this.lineIndex].length > this.tokenIndex) {
+                            const token = this.currentToken();
+                            DiagnosticCollector.addDiagnosticToLine(token.line, token.end, "Unexpected tokens");
+                        }
                     }
 
                     this.lines.push(new ScriptLine(tick, isRelative, LineType.Framebulk));
@@ -147,12 +151,134 @@ export class TASScript {
         }
     }
 
+    private parseToolsField() {
+        while (this.tokens[this.lineIndex].length > this.tokenIndex) {
+            if (this.isNextType(TokenType.Semicolon)) continue;
+
+            const toolName = this.expectText("Expected tool");
+            const toolNameToken = this.tokens[this.lineIndex][this.tokenIndex - 1];
+            if (toolName === undefined || !TASTool.tools.hasOwnProperty(toolName)) {
+                DiagnosticCollector.addDiagnostic(toolNameToken.line, toolNameToken.start, toolNameToken.end, "Invalid tool");
+                this.moveToNextSemicolon();
+                continue;
+            }
+
+            if (this.isNextType(TokenType.Semicolon) || this.tokenIndex >= this.tokens[this.lineIndex].length) {
+                DiagnosticCollector.addDiagnosticToLine(toolNameToken.line, toolNameToken.end, "Expected arguments");
+                this.tokenIndex++;
+                continue;
+            }
+
+            const tool = TASTool.tools[toolName];
+            const firstArgument = this.tokens[this.lineIndex][this.tokenIndex];
+            if (tool.hasOff && firstArgument.type === TokenType.String && firstArgument.text === "off") {
+                this.tokenIndex++;
+                if (this.tokenIndex >= this.tokens[this.lineIndex].length) return;
+                if (!this.isNextType(TokenType.Semicolon)) {
+                    const token = this.currentToken();
+                    this.moveToNextSemicolon();
+                    const lastToken = this.tokens[this.lineIndex][this.tokenIndex - (this.tokenIndex === this.tokens[this.lineIndex].length ? 1 : 2)];
+                    DiagnosticCollector.addDiagnostic(token.line, token.start, lastToken.end, "Expected ';'");
+                }
+                continue;
+            }
+
+            if (tool.isOrderDetermined) blk: {
+                for (const arg of tool.arguments) {
+                    if (arg.required) {
+                        if (this.isNextType(TokenType.Semicolon)) {
+                            const lastArgumentToken = this.tokens[this.lineIndex][this.tokenIndex - 2];
+                            DiagnosticCollector.addDiagnostic(lastArgumentToken.line, lastArgumentToken.end, lastArgumentToken.end + 1, `Expected ${TokenType[arg.type].toLowerCase()}`);
+                            break blk;
+                        }
+                        if (this.expectType(`Expected ${TokenType[arg.type].toLowerCase()}`, arg.type) !== undefined) 
+                            this.validateArgument(arg);
+                    }
+                    else {
+                        if (this.isNextType(arg.type))
+                            this.validateArgument(arg);
+                    }
+                }
+
+                if (this.tokenIndex >= this.tokens[this.lineIndex].length) return;
+                if (!this.isNextType(TokenType.Semicolon)) {
+                    const token = this.currentToken();
+                    this.moveToNextSemicolon();
+                    // Display diagnostic from current token to the end of the token before the semicolon
+                    DiagnosticCollector.addDiagnostic(token.line, token.start, this.tokens[this.lineIndex][this.tokenIndex - 2].end, "Expected ';'");
+                    continue;
+                }
+            }
+            else {
+                while (this.tokenIndex < this.tokens[this.lineIndex].length && this.tokens[this.lineIndex][this.tokenIndex].type !== TokenType.Semicolon) {
+                    const argument = this.currentToken();
+                    blk: {
+                        for (const arg of tool.arguments) {
+                            if (arg.type === argument.type) {
+                                if (argument.type === TokenType.String) {
+                                    if (arg.text !== undefined && arg.text === argument.text)
+                                        break blk;
+                                }
+                                else if (arg.type === TokenType.Number && arg.unit !== undefined) {
+                                    if (this.tokenIndex + 1 < this.tokens[this.lineIndex].length) {
+                                        this.tokenIndex++;
+                                        if (this.isNextType(TokenType.String)) {
+                                            this.tokenIndex--;
+                                            const unitToken = this.tokens[this.lineIndex][this.tokenIndex];
+                                            if (unitToken.text === arg.unit) break blk; // TODO: Maybe more information here?
+                                        }
+                                        this.tokenIndex--;
+                                    }
+                                }
+                                else break blk;
+                            }
+                        }
+
+                        DiagnosticCollector.addDiagnostic(argument.line, argument.start, argument.end, "Invalid argument");
+                    }
+                    this.tokenIndex++;
+                }
+                this.tokenIndex++;
+            }
+        }
+    }
+
+    private validateArgument(arg: TASTool.ToolArgument) {
+        const argumentToken = this.tokens[this.lineIndex][this.tokenIndex - 1];
+        if (arg.type === TokenType.String && arg.text !== undefined) {
+            // Validate text
+            if (arg.text !== argumentToken.text)
+                DiagnosticCollector.addDiagnostic(argumentToken.line, argumentToken.start, argumentToken.end, "Invalid argument");
+        }
+        else if (arg.type === TokenType.Number && arg.unit !== undefined) {
+            // Validate unit
+            if (!this.isNextType(TokenType.String)) {
+                DiagnosticCollector.addDiagnostic(argumentToken.line, argumentToken.end, argumentToken.end + 1, "Expected unit");
+                return;
+            }
+
+            const unitToken = this.tokens[this.lineIndex][this.tokenIndex - 1];
+            if (unitToken.text !== arg.unit)
+                DiagnosticCollector.addDiagnostic(unitToken.line, unitToken.start, unitToken.end, "Invalid unit");
+        }
+    }
+
+    private moveToNextSemicolon() {
+        while (this.tokenIndex < this.tokens[this.lineIndex].length) {
+            if (this.currentToken().type === TokenType.Semicolon) {
+                this.tokenIndex++;
+                return;
+            }
+            this.tokenIndex++;
+        }
+    }
+
     /*
     * Helpers
     */
 
     private currentToken(): Token {
-        return this.tokens[this.lineIndex][this.tokenIndex - 1];
+        return this.tokens[this.lineIndex][this.tokenIndex];
     }
 
     private isNextType(type: TokenType): boolean {
@@ -166,11 +292,13 @@ export class TASScript {
         }
     }
 
-    private expectType(errorText: string, type: TokenType) {
+    private expectType(errorText: string, type: TokenType): Token | undefined {
         const token = this.next(errorText);
         if (token === undefined) return;
         if (token.type !== type)
             DiagnosticCollector.addDiagnostic(token.line, token.start, token.end, errorText);
+
+        return token;
     }
 
     private expectVector() {

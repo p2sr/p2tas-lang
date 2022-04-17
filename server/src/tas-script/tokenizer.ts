@@ -109,10 +109,10 @@ namespace Tokenizer {
 
             switch (result.type) {
                 case ResultType.End: return tokens;
-                case ResultType.Token: 
+                case ResultType.Token:
                     tokens.push(result.token!);
                     break;
-                case ResultType.InvalidCharacter: throw new Error(`TODO: InvalidCharacter (at: ${index}, line: ${lineNumber})`);
+                case ResultType.InvalidCharacter: throw new Error(`tokenizer: InvalidCharacter (at: ${index}, line: ${lineNumber})`);
             }
         }
     }
@@ -150,7 +150,7 @@ namespace Tokenizer {
     }
 
     const whitespacePredicate = anyOf(" \n\r\t");
-    const numberPredicate = anyOf("0123456789");
+    const numberPredicate = anyOf("-0123456789");
     const letterPredicate = anyOf("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_-1234567890");
 
     function nextTokenType(): TokenType | undefined {
@@ -195,103 +195,3 @@ namespace Tokenizer {
     }
 
 }
-
-/*
-
-class Tokenizer {
-    private static index: number = 0;
-    private static lineNumber: number = 0;
-    private static text: string = "";
-
-    static tokenizeLine(lineText: string, lineNumber: number): Token[] {
-        this.index = 0;
-        this.lineNumber = lineNumber;
-        this.text = lineText;
-
-        var tokens: Token[] = [];
-
-        while (true) {
-            const result = this.next();
-            if (result === undefined) continue;
-
-            switch (result.type) {
-                case ResultType.End: return tokens;
-                case ResultType.Token: tokens.push(result.token!);
-                case ResultType.InvalidCharacter: throw new Error("TODO: InvalidCharacter");
-            }
-        }
-    }
-
-    static next(): Result | undefined {
-        if (this.index >= this.text.length) return new Result(ResultType.End);
-
-        const start = this.index;
-        const nextTokenType = this.nextTokenType();
-        if (nextTokenType !== undefined) {
-            if (nextTokenType === TokenType.Whitespace) return undefined;
-
-            const end = this.index;
-            const tokenText = this.text.substring(start, end);
-            return new Result(ResultType.Token, new Token(nextTokenType, tokenText, start, end, this.lineNumber));
-        }
-        else {
-            return new Result(ResultType.InvalidCharacter);
-        }
-    }
-
-    static accept(predicate: (str: string) => boolean): boolean {
-        if (this.index >= this.text.length) return false;
-
-        const c = this.text[this.index];
-        if (predicate(c)) {
-            this.index++;
-            return true;
-        }
-        return false;
-    }
-
-    static anyOf(chars: string): (str: string) => boolean {
-        return (str: string): boolean => chars.indexOf(str) !== -1;
-    }
-
-    private static readonly whitespacePredicate = this.anyOf(" \n\r\t");
-    private static readonly numberPredicate = this.anyOf("0123456789");
-    private static readonly letterPredicate = this.anyOf("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
-
-    static nextTokenType(): TokenType | undefined {
-        // Skip whitespace
-        if (this.accept(this.whitespacePredicate)) {
-            while (this.accept(this.whitespacePredicate));
-            return TokenType.Whitespace;
-        }
-
-        // Accept number (including floats)
-        if (this.accept(this.numberPredicate)) {
-            while (this.accept(this.numberPredicate));
-            this.accept(this.anyOf("."));
-            while (this.accept(this.numberPredicate));
-            return TokenType.Number;
-        }
-
-        // Accept words
-        if (this.accept(this.letterPredicate)) {
-            while (this.accept(this.letterPredicate));
-            return TokenType.String;
-        }
-
-        // Accept other tokens
-        const c = this.text[this.index];
-        this.index++;
-
-        switch (c) {
-            case "+": return TokenType.Plus;
-            case ">": return TokenType.RightAngle;
-            case "|": return TokenType.Pipe;
-            case ";": return TokenType.Semicolon;
-            default: return undefined;
-        }
-    }
-
-}
-
-*/
