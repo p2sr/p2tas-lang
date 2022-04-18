@@ -20,6 +20,7 @@ export class TASScript {
 
         this.lineIndex = 0;
         this.tokenIndex = 0;
+        this.lines = [];
         this.tokens = tokenize(fileText);
 
         var state = ParserState.Version;
@@ -28,7 +29,14 @@ export class TASScript {
 
         while (this.lineIndex < this.tokens.length) {
             if (this.tokens[this.lineIndex].length === 0) {
-                this.lines.push(new ScriptLine(this.lines[this.lines.length - 1].tick, false, LineType.Framebulk, []));
+                var previousTick = 0;
+                var previousTools: TASTool.Tool[] = [];
+                if (this.lines.length > 0) {
+                    previousTick = this.lines[this.lines.length - 1].tick;
+                    previousTools = this.lines[this.lines.length - 1].activeTools;
+                }
+
+                this.lines.push(new ScriptLine(previousTick, false, LineType.Framebulk, previousTools, []));
                 this.lineIndex++;
                 continue;
             }
@@ -39,7 +47,7 @@ export class TASScript {
                     this.expectNumber("Invalid version", 1, 2);
                     this.expectCount("Ignored parameters", 2);
 
-                    this.lines.push(new ScriptLine(-1, false, LineType.Version, this.tokens[this.lineIndex]));
+                    this.lines.push(new ScriptLine(0, false, LineType.Version, [], this.tokens[this.lineIndex]));
                     state = ParserState.Start;
                     break;
                 case ParserState.Start:
@@ -69,7 +77,7 @@ export class TASScript {
                         }
                     }
 
-                    this.lines.push(new ScriptLine(-1, false, LineType.Start, this.tokens[this.lineIndex]));
+                    this.lines.push(new ScriptLine(0, false, LineType.Start, [], this.tokens[this.lineIndex]));
                     state = ParserState.Framebulks;
                     break;
                 case ParserState.Framebulks:
@@ -81,7 +89,7 @@ export class TASScript {
 
                             if (repeatCount !== undefined)
                                 repeats.push([repeatCount, tick, this.lineIndex]);
-                            this.lines.push(new ScriptLine(tick, false, LineType.RepeatStart, this.tokens[this.lineIndex]));
+                            this.lines.push(new ScriptLine(tick, false, LineType.RepeatStart, this.lines[this.lines.length - 1].activeTools, this.tokens[this.lineIndex]));
                             break;
                         }
                         else if (token.text === "end") {
@@ -95,12 +103,12 @@ export class TASScript {
                                 const repeatEnd = this.lines[this.lines.length - 1].tick;
                                 endTick = this.lines[this.lines.length - 1].tick + (repeatEnd - startingTick) * (iterations - 1);
                             }
-                            this.lines.push(new ScriptLine(endTick, false, LineType.End, this.tokens[this.lineIndex]));
+                            this.lines.push(new ScriptLine(endTick, false, LineType.End, this.lines[this.lines.length - 1].activeTools, this.tokens[this.lineIndex]));
                             break;
                         }
                         else {
                             DiagnosticCollector.addDiagnostic(token.line, token.start, token.end, "Unexpected token");
-                            this.lines.push(new ScriptLine(-1, false, LineType.Framebulk, this.tokens[this.lineIndex]));
+                            this.lines.push(new ScriptLine(-1, false, LineType.Framebulk, this.lines[this.lines.length - 1].activeTools, this.tokens[this.lineIndex]));
                             break;
                         }
                     }
@@ -108,6 +116,8 @@ export class TASScript {
                     const isRelative = this.isNextType(TokenType.Plus);
                     const tick = this.expectNumber("Expected tick") || 0;
                     this.expectType("Expected '>'", TokenType.RightAngle);
+
+                    var activeTools = this.lines[this.lines.length - 1].activeTools.map((val) => val.copy());
 
                     blk: {
                         // Movement field
@@ -134,7 +144,7 @@ export class TASScript {
                         if (this.tokens[this.lineIndex].length <= this.tokenIndex) break blk;
 
                         // Tools field
-                        this.parseToolsField();
+                        this.parseToolsField(activeTools);
                         if (this.tokens[this.lineIndex].length > this.tokenIndex) {
                             const token = this.currentToken();
                             DiagnosticCollector.addDiagnosticToLine(token.line, token.end, "Unexpected tokens");
@@ -142,7 +152,22 @@ export class TASScript {
                     }
 
                     var absoluteTick = isRelative ? this.lines[this.lines.length - 1].tick + tick : tick;
-                    this.lines.push(new ScriptLine(absoluteTick, isRelative, LineType.Framebulk, this.tokens[this.lineIndex]));
+                    const previousLineTick = this.lines[this.lines.length - 1].tick;
+
+                    for (var i = 0; i < activeTools.length; i++) {
+                        if (activeTools[i].ticksRemaining === undefined) continue;
+                        activeTools[i].ticksRemaining! -= absoluteTick - previousLineTick;
+
+                        if (activeTools[i].ticksRemaining! <= 0) {
+                            if (activeTools[i].tool === "autoaim") {
+                                activeTools[i].ticksRemaining = undefined;
+                                continue;
+                            }
+                            activeTools.splice(i, 1);
+                        }
+                    }
+
+                    this.lines.push(new ScriptLine(absoluteTick, isRelative, LineType.Framebulk, activeTools, this.tokens[this.lineIndex]));
                 default:
                     break;
             }
@@ -194,7 +219,7 @@ export class TASScript {
         }
     }
 
-    private parseToolsField() {
+    private parseToolsField(activeTools: TASTool.Tool[]) {
         while (this.tokens[this.lineIndex].length > this.tokenIndex) {
             if (this.isNextType(TokenType.Semicolon)) continue;
 
@@ -212,6 +237,9 @@ export class TASScript {
                 continue;
             }
 
+            const toolIndex = activeTools.findIndex((val) => val.tool === toolName);
+            if (toolIndex !== -1) activeTools.splice(toolIndex, 1);
+
             const tool = TASTool.tools[toolName];
             const firstArgument = this.tokens[this.lineIndex][this.tokenIndex];
             if (tool.hasOff && firstArgument.type === TokenType.String && firstArgument.text === "off") {
@@ -226,22 +254,32 @@ export class TASScript {
                 continue;
             }
 
+            var toolDuration: number | undefined = undefined;
             if (tool.isOrderDetermined) blk: {
-                for (const arg of tool.arguments) {
+                for (var i = 0; i < tool.arguments.length; i++) {
+                    const arg = tool.arguments[i];
                     if (arg.required) {
                         if (this.isNextType(TokenType.Semicolon)) {
                             const lastArgumentToken = this.tokens[this.lineIndex][this.tokenIndex - 2];
                             DiagnosticCollector.addDiagnostic(lastArgumentToken.line, lastArgumentToken.end, lastArgumentToken.end + 1, `Expected ${TokenType[arg.type].toLowerCase()}`);
                             break blk;
                         }
-                        if (this.expectType(`Expected ${TokenType[arg.type].toLowerCase()}`, arg.type) !== undefined)
+                        if (this.expectType(`Expected ${TokenType[arg.type].toLowerCase()}`, arg.type) !== undefined) {
                             this.validateArgument(arg);
+                            if (i === tool.durationIndex)
+                                toolDuration = +this.tokens[this.lineIndex][this.tokenIndex - 1].text;
+                        }
                     }
                     else {
-                        if (this.isNextType(arg.type))
+                        if (this.isNextType(arg.type)) {
                             this.validateArgument(arg);
+                            if (i === tool.durationIndex)
+                                toolDuration = +this.tokens[this.lineIndex][this.tokenIndex - 1].text;
+                        }
                     }
                 }
+
+                activeTools.push(new TASTool.Tool(toolName, toolDuration));
 
                 if (this.tokenIndex >= this.tokens[this.lineIndex].length) return;
                 if (!this.isNextType(TokenType.Semicolon)) {
@@ -282,6 +320,8 @@ export class TASScript {
                     this.tokenIndex++;
                 }
                 this.tokenIndex++;
+
+                activeTools.push(new TASTool.Tool(toolName, toolDuration));
             }
         }
     }
@@ -420,6 +460,7 @@ export class ScriptLine {
         public tick: number,
         public isRelative: boolean,
         public type: LineType,
+        public activeTools: TASTool.Tool[],
         public tokens: Token[],
     ) { }
 }

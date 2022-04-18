@@ -253,15 +253,15 @@ connection.onHover((params, cancellationToken, workDoneProgressReporter, resultP
 	return undefined;
 });
 
-// connection.onRequest("p2tas/activeTools", (params: [any, number]) => {
-// 	const [uri, lineNumber] = params;
+connection.onRequest("p2tas/activeTools", (params: [any, number]) => {
+	const [uri, lineNumber] = params;
 
-// 	const script = documents.get(uri.external);
-// 	if (script === undefined) return "";
-// 	const line = script.lines[lineNumber];
+	const script = documents.get(uri.external);
+	if (script === undefined) return "";
+	const line = script.lines[lineNumber];
 
-// 	return line.activeTools.map((tool) => `${tool.tool}${tool.ticksRemaining ? ` (${tool.ticksRemaining} ticks remaining)` : ""}`).join(", ");
-// });
+	return line.activeTools.map((tool) => `${tool.tool}${tool.ticksRemaining ? ` (${tool.ticksRemaining} ticks remaining)` : ""}`).join(", ");
+});
 
 // connection.onRequest("p2tas/lineTick", (params: [any, number]) => {
 // 	const [uri, lineNumber] = params;

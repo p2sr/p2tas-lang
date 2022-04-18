@@ -1,6 +1,17 @@
 import { TokenType } from "./tokenizer";
 
 export namespace TASTool {
+    export class Tool {
+        constructor(
+            public tool: string,
+            public ticksRemaining?: number
+        ) {}
+
+        copy(): Tool {
+            return new Tool(this.tool, this.ticksRemaining);
+        }
+    }
+
     interface ToolDefinition {
         [name: string]: {
             readonly isOrderDetermined: boolean,

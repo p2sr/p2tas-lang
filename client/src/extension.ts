@@ -64,7 +64,7 @@ export function activate(context: vscode.ExtensionContext) {
     client.registerProposedFeatures();
 
     // Draw the active tools display when the client is ready to have it pop up
-    // client.onReady().then(() => drawActiveToolsDisplay(vscode.window.activeTextEditor!.selection.active, vscode.window.activeTextEditor!.document));
+    client.onReady().then(() => drawActiveToolsDisplay(vscode.window.activeTextEditor!.selection.active, vscode.window.activeTextEditor!.document));
 
     // Start the client. This will also launch the server
     client.start();
@@ -144,13 +144,13 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(codeActionProvider);
 
 
-    // vscode.window.onDidChangeTextEditorSelection(event => {
-    //     const editor = vscode.window.activeTextEditor;
-    //     if (!editor) return;
+    vscode.window.onDidChangeTextEditorSelection(event => {
+        const editor = vscode.window.activeTextEditor;
+        if (!editor) return;
 
-    //     const cursorPos = event.selections[0].active;
-    //     drawActiveToolsDisplay(cursorPos, editor.document);
-    // });
+        const cursorPos = event.selections[0].active;
+        drawActiveToolsDisplay(cursorPos, editor.document);
+    });
 
     // --------------------------------------------------------------------------------------------------
     //                                             Sockets
