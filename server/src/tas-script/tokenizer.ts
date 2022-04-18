@@ -14,7 +14,7 @@ export class Token {
     ) { }
 }
 
-export function tokenize(fileText: string): Token[][] {
+export function tokenize(fileText: string): [Token[][], string[]] {
     var tokens: Token[][] = [];
 
     var lines = fileText.split("\n");
@@ -25,7 +25,7 @@ export function tokenize(fileText: string): Token[][] {
     }
 
     removeComments(tokens);
-    return tokens;
+    return [tokens, lines];
 }
 
 function removeComments(tokens: Token[][]) {

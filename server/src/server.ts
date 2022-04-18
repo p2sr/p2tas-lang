@@ -9,7 +9,7 @@ import {
 	InsertTextFormat,
 	MarkupKind
 } from 'vscode-languageserver/node';
-import { TASScript } from './tas-script/tasScript';
+import { LineType, ScriptLine, TASScript } from './tas-script/tasScript';
 import { TASTool } from './tas-script/tasTool';
 import { TokenType } from './tas-script/tokenizer';
 // import { TASTool } from './_tas-script/tasTool';
@@ -213,7 +213,9 @@ connection.onHover((params, cancellationToken, workDoneProgressReporter, resultP
 	const script = documents.get(params.textDocument.uri);
 	if (!script) return undefined;
 
-	const line = script.lines[params.position.line];
+	const line = script.lines.get(params.position.line);
+	if (line === undefined) return undefined;
+
 	for (var i = 0; i < line.tokens.length; i++) {
 		const token = line.tokens[i];
 		if (params.position.character >= token.start && params.position.character <= token.end) {
@@ -258,70 +260,55 @@ connection.onRequest("p2tas/activeTools", (params: [any, number]) => {
 
 	const script = documents.get(uri.external);
 	if (script === undefined) return "";
-	const line = script.lines[lineNumber];
+	const line = script.lines.get(lineNumber);
+	if (line === undefined) return "";
 
 	return line.activeTools.map((tool) => `${tool.tool}${tool.ticksRemaining ? ` (${tool.ticksRemaining} ticks remaining)` : ""}`).join(", ");
 });
 
-// connection.onRequest("p2tas/lineTick", (params: [any, number]) => {
-// 	const [uri, lineNumber] = params;
+connection.onRequest("p2tas/lineTick", (params: [any, number]) => {
+	const [uri, lineNumber] = params;
 
-// 	const script = documents.get(uri.external);
-// 	if (script === undefined) return "";
-// 	const line = script.lines[lineNumber];
+	const script = documents.get(uri.external);
+	if (script === undefined) return "";
 
-// 	return line.absoluteTick;
-// });
+	return script.lines.get(lineNumber)?.tick || "";
+});
 
-// connection.onRequest("p2tas/toggleLineTickType", (params: [any, number]) => {
-// 	const [uri, lineNumber] = params;
+connection.onRequest("p2tas/toggleLineTickType", (params: [any, number]) => {
+	const [uri, lineNumber] = params;
 
-// 	const script = documents.get(uri.external);
-// 	if (script === undefined) return "";
-// 	const line = script.lines[lineNumber];
+	const script = documents.get(uri.external);
+	if (script === undefined) return "";
+	const line = script.lines.get(lineNumber);
+	if (line === undefined) return "";
 
-// 	if (line.type !== LineType.Framebulk) return "";
+	if (line.type !== LineType.Framebulk) return "";
 
-// 	if (line.relativeTick === undefined) {
-// 		// Switch from absolute to relative
-// 		if (lineNumber - 1 < 0) return line.lineText;
+	if (!line.isRelative) {
+		// Switch from absolute to relative
+		let previousLine: ScriptLine | undefined = script.lines.get(lineNumber - 1);
 
-// 		let previousLine: ScriptLine | undefined = undefined;
-// 		for (let i = lineNumber - 1; i > 0; i--) {
-// 			if (script.lines[i].type !== LineType.Comment) {
-// 				previousLine = script.lines[i]
-// 				break;
-// 			}
-// 		}
+		// If there is no previous line, then the requested line was the first line in the file
+		if (previousLine === undefined || (previousLine!.type === LineType.Start || previousLine!.type === LineType.Version)) return line.lineText;
 
-// 		// If there is no previous line, then the requested line was the first line in the file
-// 		if (previousLine === undefined) return line.lineText;
+		// Invalid line format
+		if (line.tokens[0].type !== TokenType.Number) return line.lineText;
 
-// 		const firstCharacter = line.lineText.match(/\S/)?.index || 0;
-// 		let arrowCharacter = line.lineText.indexOf('>');
-// 		if (arrowCharacter === -1) arrowCharacter = line.lineText.length;
+		const newTickSection = `+${line.tick - previousLine.tick}`;
+		//     everything before the number                      -|relative tick  -|everything after the tick
+		return `${line.lineText.substring(0, line.tokens[0].start)}${newTickSection}${line.lineText.substring(line.tokens[0].end).replace(/\r|\n/, "") }`;
+	}
+	else {
+		// Switch from relative to absolute
+		// Invalid line format
+		if (line.tokens[0].type !== TokenType.Plus || line.tokens[1].type !== TokenType.Number) return line.lineText;
 
-// 		//      everything before the first character        the new tick section                             everything after '>' including '>'
-// 		return `${line.lineText.substring(0, firstCharacter)}+${line.absoluteTick - previousLine.absoluteTick}${line.lineText.substring(arrowCharacter)}`;
-// 	}
-// 	else {
-// 		// Switch from relative to absolute
-// 		if (lineNumber - 1 > 0) {
-// 			for (let i = lineNumber - 1; i > 0; i--) {
-// 				const _line = script.lines[i];
-// 				// Can't switch to absolute in a repeat statement, or switch the first framebulk in the file
-// 				if (_line.type === LineType.RepeatStart || _line.type === LineType.Start) return line.lineText;
-// 			}
-// 		}
-
-// 		const firstCharacter = line.lineText.match(/\S/)?.index || 0;
-// 		let arrowCharacter = line.lineText.indexOf('>');
-// 		if (arrowCharacter === -1) arrowCharacter = line.lineText.length;
-
-// 		//      everything before the first character        the absolute tick   everything after '>' including '>'
-// 		return `${line.lineText.substring(0, firstCharacter)}${line.absoluteTick}${line.lineText.substring(arrowCharacter)}`;
-// 	}
-// });
+		const newTickSection = `${line.tick}`;
+		//      everything before the plus                       -|everything after the plus                                         -|absolute tick  -|everything after the tick                    (remove new line)
+		return `${line.lineText.substring(0, line.tokens[0].start)}${line.lineText.substring(line.tokens[0].end, line.tokens[1].start)}${newTickSection}${line.lineText.substring(line.tokens[1].end).replace(/\r|\n/, "")}`;
+	}
+});
 
 // Listen on the connection
 connection.listen();

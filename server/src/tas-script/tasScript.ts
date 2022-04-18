@@ -9,19 +9,25 @@ enum ParserState {
 
 export class TASScript {
 
-    lines: ScriptLine[] = [];
+    lines = new Map<number, ScriptLine>();
 
     tokens: Token[][] = [];
     lineIndex = 0;
     tokenIndex = 0;
+
+    private previousLine(): ScriptLine | undefined {
+        return this.lines.get(this.lines.size - 1);
+    }
 
     parse(fileText: string): Diagnostic[] {
         new DiagnosticCollector();
 
         this.lineIndex = 0;
         this.tokenIndex = 0;
-        this.lines = [];
-        this.tokens = tokenize(fileText);
+        this.lines = new Map<number, ScriptLine>();
+
+        var lines: string[] = [];
+        [this.tokens, lines] = tokenize(fileText);
 
         var state = ParserState.Version;
         // Stack for nested repeats; stores iterations, starting tick, lineIndex of "repeat"
@@ -29,17 +35,16 @@ export class TASScript {
 
         while (this.lineIndex < this.tokens.length) {
             if (this.tokens[this.lineIndex].length === 0) {
-                var previousTick = 0;
-                var previousTools: TASTool.Tool[] = [];
-                if (this.lines.length > 0) {
-                    previousTick = this.lines[this.lines.length - 1].tick;
-                    previousTools = this.lines[this.lines.length - 1].activeTools;
-                }
+                const previousLine = this.previousLine()!;
+                const keys = Array.from(this.lines.keys());
+                this.lines.set(keys[keys.length - 1] + 1, new ScriptLine("", previousLine.tick, false, LineType.Framebulk, previousLine.activeTools, []));
 
-                this.lines.push(new ScriptLine(previousTick, false, LineType.Framebulk, previousTools, []));
                 this.lineIndex++;
                 continue;
             }
+
+            const currentLine = this.tokens[this.lineIndex][0].line;
+            const currentLineText = lines[currentLine];
 
             switch (state) {
                 case ParserState.Version:
@@ -47,7 +52,7 @@ export class TASScript {
                     this.expectNumber("Invalid version", 1, 2);
                     this.expectCount("Ignored parameters", 2);
 
-                    this.lines.push(new ScriptLine(0, false, LineType.Version, [], this.tokens[this.lineIndex]));
+                    this.lines.set(currentLine, new ScriptLine(currentLineText, 0, false, LineType.Version, [], this.tokens[this.lineIndex]));
                     state = ParserState.Start;
                     break;
                 case ParserState.Start:
@@ -77,38 +82,38 @@ export class TASScript {
                         }
                     }
 
-                    this.lines.push(new ScriptLine(0, false, LineType.Start, [], this.tokens[this.lineIndex]));
+                    this.lines.set(currentLine, new ScriptLine(currentLineText, 0, false, LineType.Start, [], this.tokens[this.lineIndex]));
                     state = ParserState.Framebulks;
                     break;
                 case ParserState.Framebulks:
                     if (this.isNextType(TokenType.String)) {
                         const token = this.tokens[this.lineIndex][this.tokenIndex - 1];
                         if (token.text === "repeat") {
-                            const tick = this.lines[this.lines.length - 1].tick;
+                            const tick = this.previousLine()!.tick;
                             const repeatCount = this.expectNumber("Expected repeat count");
 
                             if (repeatCount !== undefined)
                                 repeats.push([repeatCount, tick, this.lineIndex]);
-                            this.lines.push(new ScriptLine(tick, false, LineType.RepeatStart, this.lines[this.lines.length - 1].activeTools, this.tokens[this.lineIndex]));
+                            this.lines.set(currentLine, new ScriptLine(currentLineText, tick, false, LineType.RepeatStart, this.previousLine()!.activeTools, this.tokens[this.lineIndex]));
                             break;
                         }
                         else if (token.text === "end") {
                             var endTick = 0;
                             if (repeats.length === 0) {
                                 DiagnosticCollector.addDiagnostic(token.line, token.start, token.end, "End outside of loop")
-                                endTick = this.lines[this.lines.length - 1].tick;
+                                endTick = this.previousLine()!.tick;
                             }
                             else {
                                 const [iterations, startingTick] = repeats.pop()!;
-                                const repeatEnd = this.lines[this.lines.length - 1].tick;
-                                endTick = this.lines[this.lines.length - 1].tick + (repeatEnd - startingTick) * (iterations - 1);
+                                const repeatEnd = this.previousLine()!.tick;
+                                endTick = this.previousLine()!.tick + (repeatEnd - startingTick) * (iterations - 1);
                             }
-                            this.lines.push(new ScriptLine(endTick, false, LineType.End, this.lines[this.lines.length - 1].activeTools, this.tokens[this.lineIndex]));
+                            this.lines.set(currentLine, new ScriptLine(currentLineText, endTick, false, LineType.End, this.previousLine()!.activeTools, this.tokens[this.lineIndex]));
                             break;
                         }
                         else {
                             DiagnosticCollector.addDiagnostic(token.line, token.start, token.end, "Unexpected token");
-                            this.lines.push(new ScriptLine(-1, false, LineType.Framebulk, this.lines[this.lines.length - 1].activeTools, this.tokens[this.lineIndex]));
+                            this.lines.set(currentLine, new ScriptLine(currentLineText, -1, false, LineType.Framebulk, this.previousLine()!.activeTools, this.tokens[this.lineIndex]));
                             break;
                         }
                     }
@@ -117,7 +122,7 @@ export class TASScript {
                     const tick = this.expectNumber("Expected tick") || 0;
                     this.expectType("Expected '>'", TokenType.RightAngle);
 
-                    var activeTools = this.lines[this.lines.length - 1].activeTools.map((val) => val.copy());
+                    var activeTools = this.previousLine()!.activeTools.map((val) => val.copy());
 
                     blk: {
                         // Movement field
@@ -151,8 +156,8 @@ export class TASScript {
                         }
                     }
 
-                    var absoluteTick = isRelative ? this.lines[this.lines.length - 1].tick + tick : tick;
-                    const previousLineTick = this.lines[this.lines.length - 1].tick;
+                    var absoluteTick = isRelative ? this.previousLine()!.tick + tick : tick;
+                    const previousLineTick = this.previousLine()!.tick;
 
                     for (var i = 0; i < activeTools.length; i++) {
                         if (activeTools[i].ticksRemaining === undefined) continue;
@@ -167,7 +172,7 @@ export class TASScript {
                         }
                     }
 
-                    this.lines.push(new ScriptLine(absoluteTick, isRelative, LineType.Framebulk, activeTools, this.tokens[this.lineIndex]));
+                    this.lines.set(currentLine, new ScriptLine(currentLineText, absoluteTick, isRelative, LineType.Framebulk, activeTools, this.tokens[this.lineIndex]));
                 default:
                     break;
             }
@@ -457,6 +462,7 @@ export enum LineType {
 
 export class ScriptLine {
     constructor(
+        public lineText: string,
         public tick: number,
         public isRelative: boolean,
         public type: LineType,
