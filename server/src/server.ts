@@ -48,7 +48,7 @@ connection.onDidChangeTextDocument((params) => {
 	});
 });
 
-connection.onDidCloseTextDocument((params) => { /*documents.delete(params.textDocument.uri);*/ });
+connection.onDidCloseTextDocument((params) => { documents.delete(params.textDocument.uri); });
 
 connection.onCompletion((params: TextDocumentPositionParams): CompletionItem[] => {
 	const script = documents.get(params.textDocument.uri);
