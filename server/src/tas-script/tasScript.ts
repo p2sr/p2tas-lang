@@ -23,9 +23,12 @@ export class TASScript {
         this.tokens = tokenize(fileText);
 
         var state = ParserState.Version;
+        // Stack for nested repeats; stores iterations, starting tick, lineIndex of "repeat"
+        var repeats: [number, number, number][] = [];
 
         while (this.lineIndex < this.tokens.length) {
             if (this.tokens[this.lineIndex].length === 0) {
+                this.lines.push(new ScriptLine(this.lines[this.lines.length - 1].tick, false, LineType.Framebulk, []));
                 this.lineIndex++;
                 continue;
             }
@@ -70,6 +73,38 @@ export class TASScript {
                     state = ParserState.Framebulks;
                     break;
                 case ParserState.Framebulks:
+                    if (this.isNextType(TokenType.String)) {
+                        const token = this.tokens[this.lineIndex][this.tokenIndex - 1];
+                        if (token.text === "repeat") {
+                            const tick = this.lines[this.lines.length - 1].tick;
+                            const repeatCount = this.expectNumber("Expected repeat count");
+
+                            if (repeatCount !== undefined)
+                                repeats.push([repeatCount, tick, this.lineIndex]);
+                            this.lines.push(new ScriptLine(tick, false, LineType.RepeatStart, this.tokens[this.lineIndex]));
+                            break;
+                        }
+                        else if (token.text === "end") {
+                            var endTick = 0;
+                            if (repeats.length === 0) {
+                                DiagnosticCollector.addDiagnostic(token.line, token.start, token.end, "End outside of loop")
+                                endTick = this.lines[this.lines.length - 1].tick;
+                            }
+                            else {
+                                const [iterations, startingTick] = repeats.pop()!;
+                                const repeatEnd = this.lines[this.lines.length - 1].tick;
+                                endTick = this.lines[this.lines.length - 1].tick + (repeatEnd - startingTick) * (iterations - 1);
+                            }
+                            this.lines.push(new ScriptLine(endTick, false, LineType.End, this.tokens[this.lineIndex]));
+                            break;
+                        }
+                        else {
+                            DiagnosticCollector.addDiagnostic(token.line, token.start, token.end, "Unexpected token");
+                            this.lines.push(new ScriptLine(-1, false, LineType.Framebulk, this.tokens[this.lineIndex]));
+                            break;
+                        }
+                    }
+
                     const isRelative = this.isNextType(TokenType.Plus);
                     const tick = this.expectNumber("Expected tick") || 0;
                     this.expectType("Expected '>'", TokenType.RightAngle);
@@ -114,6 +149,13 @@ export class TASScript {
 
             this.tokenIndex = 0;
             this.lineIndex++;
+        }
+
+        // Check for unterminated loops
+        if (repeats.length > 0) {
+            for (const [_, __, line] of repeats) {
+                DiagnosticCollector.addDiagnosticToLine(line, 0, "Unterminated loop");
+            }
         }
 
         return DiagnosticCollector.getDiagnostics();
