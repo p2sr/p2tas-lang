@@ -120,10 +120,10 @@ connection.onCompletion((params: TextDocumentPositionParams): CompletionItem[] =
 					return {
 						label: arg.text!,
 						kind: CompletionItemKind.Field,
-						documentation: {
+						documentation: arg.description !== undefined ? {
 							kind: MarkupKind.Markdown,
-							value: arg.description || ""
-						}
+							value: arg.description!
+						} : undefined
 					};
 				}));
 			return result;

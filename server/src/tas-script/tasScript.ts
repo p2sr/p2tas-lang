@@ -242,7 +242,7 @@ export class TASScript {
                 continue;
             }
 
-            const toolIndex = activeTools.findIndex((val) => val.tool === toolName);
+            const toolIndex = activeTools.findIndex((val) => val.tool === toolName || val.tool === `(${toolName})`);
             if (toolIndex !== -1) activeTools.splice(toolIndex, 1);
 
             const tool = TASTool.tools[toolName];
@@ -269,22 +269,41 @@ export class TASScript {
                             DiagnosticCollector.addDiagnostic(lastArgumentToken.line, lastArgumentToken.end, lastArgumentToken.end + 1, `Expected ${TokenType[arg.type].toLowerCase()}`);
                             break blk;
                         }
+
                         if (this.expectType(`Expected ${TokenType[arg.type].toLowerCase()}`, arg.type) !== undefined) {
                             this.validateArgument(arg);
                             if (i === tool.durationIndex)
                                 toolDuration = +this.tokens[this.lineIndex][this.tokenIndex - 1].text;
+                            continue;
                         }
+
+                        // Skip arguments that are now not enabled
+                        if (arg.enablesUpTo !== undefined) i = arg.enablesUpTo;
                     }
                     else {
                         if (this.isNextType(arg.type)) {
+                            if (arg.type === TokenType.String && arg.text !== undefined) {
+                                const token = this.tokens[this.lineIndex][this.tokenIndex - 1];
+                                if (arg.text! === token.text) continue;
+
+                                if (arg.enablesUpTo !== undefined) i = arg.enablesUpTo;
+                                this.tokenIndex--;
+                                continue;
+                            }
+
                             this.validateArgument(arg);
                             if (i === tool.durationIndex)
                                 toolDuration = +this.tokens[this.lineIndex][this.tokenIndex - 1].text;
                         }
+                        else {
+                            // Skip arguments that are now not enabled
+                            if (arg.enablesUpTo !== undefined) i = arg.enablesUpTo;
+                        }
                     }
                 }
 
-                activeTools.push(new TASTool.Tool(toolName, toolDuration));
+                if (toolDuration !== undefined)
+                    activeTools.push(new TASTool.Tool(toolName, toolDuration));
 
                 if (this.tokenIndex >= this.tokens[this.lineIndex].length) return;
                 if (!this.isNextType(TokenType.Semicolon)) {
@@ -326,7 +345,7 @@ export class TASScript {
                 }
                 this.tokenIndex++;
 
-                activeTools.push(new TASTool.Tool(toolName, toolDuration));
+                activeTools.push(new TASTool.Tool(toolName !== "decel" ? toolName : "(decel)", toolDuration));
             }
         }
     }
