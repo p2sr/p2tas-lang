@@ -1,3 +1,5 @@
+import { DiagnosticCollector } from "./diagnosticCollector";
+
 export enum TokenType {
     Plus, Number, RightAngle, Pipe, Semicolon, String, Whitespace,
     SingleLineComment,
@@ -44,7 +46,12 @@ function removeComments(tokens: Token[][]) {
                 multilineCommentStartIndex = tokenIndex;
             }
             else if (token.type === TokenType.MultilineCommentClose) {
-                if (multilineCommentStartLine === undefined || multilineCommentStartIndex === undefined) throw new Error("TODO: Comment was closed but never opened");
+                if (multilineCommentStartLine === undefined || multilineCommentStartIndex === undefined) {
+                    DiagnosticCollector.addDiagnostic(token.line, token.start, token.end, "Unmatched multiline comment close");
+                    tokens[lineIndex].splice(tokenIndex, 1);
+                    continue;
+                }
+                
                 if (lineIndex === multilineCommentStartLine) {
                     tokens[lineIndex].splice(multilineCommentStartIndex, tokenIndex - multilineCommentStartIndex + 1)
                     tokenIndex = multilineCommentStartIndex;
@@ -112,7 +119,6 @@ namespace Tokenizer {
                 case ResultType.Token:
                     tokens.push(result.token!);
                     break;
-                case ResultType.InvalidCharacter: throw new Error(`tokenizer: InvalidCharacter (at: ${index}, line: ${lineNumber})`);
             }
         }
     }
@@ -122,16 +128,11 @@ namespace Tokenizer {
 
         const start = index;
         const nextType = nextTokenType();
-        if (nextType !== undefined) {
-            if (nextType === TokenType.Whitespace) return undefined;
+        if (nextType === TokenType.Whitespace) return undefined;
 
-            const end = index;
-            const tokenText = text.substring(start, end);
-            return new Result(ResultType.Token, new Token(nextType, tokenText, lineNumber, start, end));
-        }
-        else {
-            return new Result(ResultType.InvalidCharacter);
-        }
+        const end = index;
+        const tokenText = text.substring(start, end);
+        return new Result(ResultType.Token, new Token(nextType, tokenText, lineNumber, start, end));
     }
 
     function accept(predicate: (str: string) => boolean): boolean {
@@ -151,9 +152,9 @@ namespace Tokenizer {
 
     const whitespacePredicate = anyOf(" \n\r\t");
     const numberPredicate = anyOf("-0123456789");
-    const letterPredicate = anyOf("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_-1234567890");
+    const letterPredicate = anyOf("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_-0123456789:().\"\'=@");
 
-    function nextTokenType(): TokenType | undefined {
+    function nextTokenType(): TokenType {
         // Skip whitespace
         if (accept(whitespacePredicate)) {
             while (accept(whitespacePredicate));
@@ -161,7 +162,7 @@ namespace Tokenizer {
         }
 
         // Accept number (including floats)
-        if (accept(numberPredicate)) {
+        if (accept(anyOf("-.0123456789"))) {
             while (accept(numberPredicate));
             accept(anyOf("."));
             while (accept(numberPredicate));
@@ -186,11 +187,11 @@ namespace Tokenizer {
             case "/":
                 if (accept(anyOf("/"))) return TokenType.SingleLineComment;
                 else if (accept(anyOf("*"))) return TokenType.MultilineCommentOpen;
-                return undefined; // ?
+                return TokenType.String; // ?
             case "*":
                 if (accept(anyOf("/"))) return TokenType.MultilineCommentClose;
-                return undefined; // ?
-            default: return undefined;
+                return TokenType.String; // ?
+            default: return TokenType.String;
         }
     }
 

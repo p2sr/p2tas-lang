@@ -27,7 +27,7 @@ export namespace TASTool {
             readonly type: TokenType,
             readonly required: boolean,
             readonly text?: string,
-            readonly unit?: string,
+            readonly unit?: string, // if it ends with a '?', it's optional (see absmov)
             readonly description?: string,
             readonly enablesUpTo?: number,
         ) { }
@@ -55,7 +55,7 @@ export namespace TASTool {
             description: "**Syntax:** ```strafe [parameters]```\n\nThe strafe tool will adjust player input to get a different kind of strafing depending on parameters.\n\n**Example:** ```strafe 299.999ups left veccam```"
         },
         autojump: {
-            isOrderDetermined: false,
+            isOrderDetermined: true,
             hasOff: true,
             durationIndex: -1,
             arguments: [
@@ -64,10 +64,11 @@ export namespace TASTool {
             description: "**Syntax:** ```autojump [on]```\n\nAnything other than ```on``` will disable the tool.\n\nAutojump tool will change the jump button state depending on whether the player is grounded or not, resulting in automatically jumping on the earliest contact with a ground.\n\n**Example:** ```autojump on```"
         },
         absmov: {
-            isOrderDetermined: false,
+            isOrderDetermined: true,
             hasOff: true,
             durationIndex: -1,
             arguments: [
+                { type: TokenType.Number, unit: "deg?", required: false },
                 { type: TokenType.Number, required: false },
             ],
             description: "**Syntax:** ```absmov <angle> [strength]```\n\nAbsolute movement tool will generate movement values depending on the absolute move direction you provide in degrees. Giving off as an argument will disable the tool. The strength parameter must be between 0 and 1 (default) and controls how fast the player will move.\n\n**Example:** ```absmov 90 0.5```",
@@ -96,11 +97,11 @@ export namespace TASTool {
             description: "**Syntax:** ```autoaim <x> <y> <z> [time]```\n\nThe Auto Aim tool will automatically aim towards a specified point in 3D space.\n\n**Example:** ```autoaim 0 0 0 20```"
         },
         decel: {
-            isOrderDetermined: false,
+            isOrderDetermined: true,
             hasOff: true,
             durationIndex: -1,
             arguments: [
-                { type: TokenType.Number, required: false },
+                { type: TokenType.Number, unit: "ups?", required: false },
             ],
             description: "**Syntax:** ```decel <speed>```\n\nThe decelaration tool will slow down as quickly as possible to the given speed.\n\n**Example:** ```decel 100```"
         },

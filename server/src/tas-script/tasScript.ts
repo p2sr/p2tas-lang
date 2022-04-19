@@ -16,7 +16,9 @@ export class TASScript {
     tokenIndex = 0;
 
     private previousLine(): ScriptLine | undefined {
-        return this.lines.get(this.lines.size - 1);
+        const entries = Array.from(this.lines.entries());
+        if (entries.length === 0) return undefined;
+        return entries[entries.length - 1][1];
     }
 
     parse(fileText: string): Diagnostic[] {
@@ -37,7 +39,7 @@ export class TASScript {
             if (this.tokens[this.lineIndex].length === 0) {
                 const previousLine = this.previousLine()!;
                 const keys = Array.from(this.lines.keys());
-                this.lines.set(keys[keys.length - 1] + 1, new ScriptLine("", previousLine.tick, false, LineType.Framebulk, previousLine.activeTools, []));
+                this.lines.set(keys[keys.length - 1] + 1, new ScriptLine("", previousLine?.tick || 0, false, LineType.Framebulk, previousLine?.activeTools || [], []));
 
                 this.lineIndex++;
                 continue;
@@ -359,13 +361,15 @@ export class TASScript {
         }
         else if (arg.type === TokenType.Number && arg.unit !== undefined) {
             // Validate unit
+            const isUnitOptional = arg.unit.endsWith("?");
             if (!this.isNextType(TokenType.String)) {
-                DiagnosticCollector.addDiagnostic(argumentToken.line, argumentToken.end, argumentToken.end + 1, "Expected unit");
+                if (!isUnitOptional)
+                    DiagnosticCollector.addDiagnostic(argumentToken.line, argumentToken.end, argumentToken.end + 1, "Expected unit");
                 return;
             }
 
             const unitToken = this.tokens[this.lineIndex][this.tokenIndex - 1];
-            if (unitToken.text !== arg.unit)
+            if (unitToken.text !== arg.unit.substring(0, arg.unit.length - 1))
                 DiagnosticCollector.addDiagnostic(unitToken.line, unitToken.start, unitToken.end, "Invalid unit");
         }
     }
