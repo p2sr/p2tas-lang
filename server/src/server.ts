@@ -50,6 +50,9 @@ connection.onDidChangeTextDocument((params) => {
 
 connection.onDidCloseTextDocument((params) => { documents.delete(params.textDocument.uri); });
 
+// FIXME: This needs to check if we are in a comment / skip comments on the way of finding the tool.
+//        One idea might be to break when we find a comment open token in "getToolAndArguments", 
+//        and advance to after the comment if we find a "*/".
 connection.onCompletion((params: TextDocumentPositionParams): CompletionItem[] => {
 	const script = documents.get(params.textDocument.uri);
 	if (script === undefined) return [];
@@ -189,43 +192,88 @@ connection.onHover((params, cancellationToken, workDoneProgressReporter, resultP
 	const line = script.lines.get(params.position.line);
 	if (line === undefined) return undefined;
 
-	for (var i = 0; i < line.tokens.length; i++) {
-		const token = line.tokens[i];
-		if (params.position.character >= token.start && params.position.character <= token.end) {
-			if (token.type === TokenType.Number) {
-				if (line.tokens[i + 1].type !== TokenType.RightAngle) continue;
-				return { contents: [`Tick: ${line.tick}`] };
-			}
-			else if (token.type !== TokenType.String) continue;
-
-			const hoveredWord = token.text;
-			for (const tool of Object.keys(TASTool.tools)) {
-				if (tool === hoveredWord) {
-					return {
-						contents: {
-							kind: MarkupKind.Markdown,
-							value: TASTool.tools[tool].description
-						}
-					};
+	if (line.type === LineType.Framebulk) {
+		for (var i = 0; i < line.tokens.length; i++) {
+			const token = line.tokens[i];
+			if (params.position.character >= token.start && params.position.character <= token.end) {
+				if (token.type === TokenType.Number) {
+					if (i + 1 >= line.tokens.length || line.tokens[i + 1].type !== TokenType.RightAngle) continue;
+					return { contents: [`Tick: ${line.tick}`] };
 				}
+				else if (token.type !== TokenType.String) continue;
 
-				for (const argument of TASTool.tools[tool].arguments) {
-					if (argument.type !== TokenType.String) continue;
-					if (argument.text === hoveredWord) {
-						if (argument.description === undefined) break;
+				const hoveredWord = token.text;
+				for (const tool of Object.keys(TASTool.tools)) {
+					if (tool === hoveredWord) {
 						return {
 							contents: {
 								kind: MarkupKind.Markdown,
-								value: argument.description,
+								value: TASTool.tools[tool].description
 							}
 						};
+					}
+
+					for (const argument of TASTool.tools[tool].arguments) {
+						if (argument.type !== TokenType.String) continue;
+						if (argument.text === hoveredWord) {
+							if (argument.description === undefined) break;
+							return {
+								contents: {
+									kind: MarkupKind.Markdown,
+									value: argument.description,
+								}
+							};
+						}
 					}
 				}
 			}
 		}
 	}
+	else if (line.type === LineType.RepeatStart) {
+		if (line.tokens.length > 0 && line.tokens[0].type === TokenType.String && line.tokens[0].text === "repeat" &&
+			params.position.character >= line.tokens[0].start && params.position.character <= line.tokens[0].end) {
+			return {
+				contents: {
+					kind: MarkupKind.Markdown,
+					value: repeatCompletion.description
+				}
+			};
+		}
+	}
+	else if (line.type === LineType.Start) {
+		for (const token of line.tokens) {
+			if (params.position.character >= token.start && params.position.character <= token.end) {
+				if (token.text === "start")
+					return {
+						contents: {
+							kind: MarkupKind.Markdown,
+							value: startCompletion.description
+						}
+					};
 
-	return undefined;
+				if (startTypes.hasOwnProperty(token.text))
+					return {
+						contents: {
+							kind: MarkupKind.Markdown,
+							value: startTypes[token.text].description
+						}
+					};
+			}
+		}
+
+		return undefined;
+	}
+	else if (line.type === LineType.End) {
+		if (line.tokens.length > 0 && line.tokens[0].type === TokenType.String && line.tokens[0].text === "end" &&
+			params.position.character >= line.tokens[0].start && params.position.character <= line.tokens[0].end) {
+			return {
+				contents: {
+					kind: MarkupKind.Markdown,
+					value: endCompletion.description
+				}
+			};
+		}
+	}
 });
 
 connection.onRequest("p2tas/activeTools", (params: [any, number]) => {
