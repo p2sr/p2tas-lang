@@ -6,8 +6,7 @@ import {
 	CompletionItemKind,
 	TextDocumentPositionParams,
 	TextDocumentSyncKind,
-	InsertTextFormat,
-	MarkupKind
+	MarkupKind,
 } from 'vscode-languageserver/node';
 import { endCompletion, repeatCompletion, startCompletion, startTypes } from './tas-script/otherCompletion';
 import { LineType, ScriptLine, TASScript } from './tas-script/tasScript';
@@ -25,7 +24,7 @@ connection.onInitialize((params: InitializeParams) => {
 			textDocumentSync: TextDocumentSyncKind.Full,
 			hoverProvider: true,
 			completionProvider: {
-				triggerCharacters: [" ", ";"]
+				triggerCharacters: [" ", ";", "|"]
 			}
 		}
 	};
