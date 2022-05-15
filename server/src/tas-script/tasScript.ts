@@ -32,6 +32,8 @@ export class TASScript {
         [this.tokens, lines] = tokenize(fileText);
 
         var state = ParserState.Version;
+        var isFirstFramebulk = true;
+
         // Stack for nested repeats; stores iterations, starting tick, lineIndex of "repeat"
         var repeats: [number, number, number][] = [];
 
@@ -120,7 +122,11 @@ export class TASScript {
                         }
                     }
 
+                    const maybePlus = this.currentToken();
                     const isRelative = this.isNextType(TokenType.Plus);
+                    if (isRelative && isFirstFramebulk)
+                        DiagnosticCollector.addDiagnostic(maybePlus.line, maybePlus.start, maybePlus.end, "First framebulk cannot be relative");
+
                     const tick = this.expectNumber("Expected tick") || 0;
                     this.expectType("Expected '>'", TokenType.RightAngle);
 
@@ -175,6 +181,7 @@ export class TASScript {
                     }
 
                     this.lines.set(currentLine, new ScriptLine(currentLineText, absoluteTick, isRelative, LineType.Framebulk, activeTools, this.tokens[this.lineIndex]));
+                    isFirstFramebulk = false;
                 default:
                     break;
             }
