@@ -321,8 +321,12 @@ export class TASScript {
                     }
                 }
 
-                if (toolDuration !== undefined)
-                    activeTools.push(new TASTool.Tool(toolName, toolDuration));
+                if (tool.durationIndex === -1)
+                    activeTools.push(new TASTool.Tool(toolName));
+                else {
+                    if (toolDuration !== undefined)
+                        activeTools.push(new TASTool.Tool(toolName, toolDuration));
+                }
 
                 if (this.tokenIndex >= this.tokens[this.lineIndex].length) return;
                 if (!this.isNextType(TokenType.Semicolon)) {
