@@ -1,4 +1,4 @@
-import { Diagnostic } from "vscode-languageserver/node";
+import { Diagnostic, integer } from "vscode-languageserver/node";
 import { DiagnosticCollector } from "./diagnosticCollector";
 import { TASTool } from "./tasTool";
 import { Token, tokenize, TokenType } from "./tokenizer";
@@ -188,6 +188,16 @@ export class TASScript {
 
             this.tokenIndex = 0;
             this.lineIndex++;
+        }
+
+        if (state === ParserState.Version) {
+            DiagnosticCollector.addDiagnosticToLine(integer.MAX_VALUE, 0, "Expected version");
+        }
+        else if (state === ParserState.Start) {
+            DiagnosticCollector.addDiagnosticToLine(integer.MAX_VALUE, 0, "Expected start line");
+        }
+        else if (state === ParserState.Framebulks && isFirstFramebulk) {
+            DiagnosticCollector.addDiagnosticToLine(integer.MAX_VALUE, 0, "Expected framebulks");
         }
 
         // Check for unterminated loops
@@ -481,6 +491,7 @@ export class TASScript {
     private expectCount(errorText: string, count: number) {
         if (this.tokens[this.lineIndex].length === count) return;
         const firstInvalidToken = this.tokens[this.lineIndex][count];
+        if (firstInvalidToken === undefined) return;
         DiagnosticCollector.addDiagnosticToLine(firstInvalidToken.line, firstInvalidToken.start, errorText);
     }
 
