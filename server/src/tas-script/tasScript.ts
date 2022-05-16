@@ -132,6 +132,22 @@ export class TASScript {
 
                     var activeTools = this.previousLine()!.activeTools.map((val) => val.copy());
 
+                    var absoluteTick = isRelative ? this.previousLine()!.tick + tick : tick;
+                    const previousLineTick = this.previousLine()!.tick;
+
+                    for (var i = 0; i < activeTools.length; i++) {
+                        if (activeTools[i].ticksRemaining === undefined) continue;
+                        activeTools[i].ticksRemaining! -= absoluteTick - previousLineTick;
+
+                        if (activeTools[i].ticksRemaining! <= 0) {
+                            if (activeTools[i].tool === "autoaim") {
+                                activeTools[i].ticksRemaining = undefined;
+                                continue;
+                            }
+                            activeTools.splice(i, 1);
+                        }
+                    }
+
                     blk: {
                         // Movement field
                         this.expectVector();
@@ -161,22 +177,6 @@ export class TASScript {
                         if (this.tokens[this.lineIndex].length > this.tokenIndex) {
                             const token = this.currentToken();
                             DiagnosticCollector.addDiagnosticToLine(token.line, token.end, "Unexpected tokens");
-                        }
-                    }
-
-                    var absoluteTick = isRelative ? this.previousLine()!.tick + tick : tick;
-                    const previousLineTick = this.previousLine()!.tick;
-
-                    for (var i = 0; i < activeTools.length; i++) {
-                        if (activeTools[i].ticksRemaining === undefined) continue;
-                        activeTools[i].ticksRemaining! -= absoluteTick - previousLineTick;
-
-                        if (activeTools[i].ticksRemaining! <= 0) {
-                            if (activeTools[i].tool === "autoaim") {
-                                activeTools[i].ticksRemaining = undefined;
-                                continue;
-                            }
-                            activeTools.splice(i, 1);
                         }
                     }
 
