@@ -27,11 +27,11 @@
 		"framebulk": {
 			"patterns": [{
 				"name": "keyword.other.tools_args",
-				"match": "\\b(strafe|autojump|absmov|setang|autoaim|decel)\\b"
+				"match": "\\b(strafe|autojump|absmov|setang|autoaim|decel|check)\\b"
 			},
 			{
 				"name": "variable.parameter",
-				"match": "\\b(on|off|none|vec|ang|veccam|max|keep|forward|forwardvel|left|right|nopitchlock)\\b"
+				"match": "\\b(on|off|none|vec|ang|veccam|max|keep|forward|forwardvel|left|right|nopitchlock|pos|posepsilon|angepsilon)\\b"
 			},
 			{
 				"name": "ups_or_deg",
