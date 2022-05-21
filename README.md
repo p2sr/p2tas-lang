@@ -3,6 +3,19 @@
 Syntax highlighting, snippets and autocompletion for the Portal 2 TAS files.
 
 ## Release Notes
+### 1.2.0
+- Sidebar improvements
+    - Button to play raw TAS (Blenderiste09)
+    - Music player UI (soni801)
+- New snippets (Blenderiste09)
+- Save on TAS playback
+- Parsing and syntax highlighting
+    - Add support for `version` (mlugg)
+    - Add support for new `start next` syntax (mlugg)
+    - Add a command to toggle tick type (david072)
+    - Add support for the `check` tool (david072)
+    - Complete language server rewrite (david072)
+
 ### 1.1.0
 - Improved sidebar UI (thanks to soni801)
     - Added replay button
