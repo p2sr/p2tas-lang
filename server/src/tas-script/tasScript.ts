@@ -63,6 +63,27 @@ export class TASScript {
                     this.expectText("Expected start", "start");
                     const startType = this.expectText("Expected start type", "map", "save", "cm", "now", "next");
 
+                    const checkStartTypeWithNumber = (startType: string, isNested: boolean): boolean => {
+                        if (startType !== "map" && startType !== "save") return false;
+
+                        if (!this.isNextType(TokenType.Number)) return false;
+
+                        const numberToken = this.tokens[this.lineIndex][this.tokenIndex - 1];
+                        const nextToken = this.currentToken();
+                        if (nextToken === undefined) return true;
+
+                        // Check for adjacency (e.g.: valid: 03test, invalid: 03 test)
+                        if (nextToken.start !== numberToken.end) {
+                            this.expectCount("Ignored parameters", 3 + (isNested ? 1 : 0));
+                            return false;
+                        }
+
+                        if (nextToken.type !== TokenType.String)
+                            DiagnosticCollector.addDiagnostic(nextToken.line, nextToken.start, nextToken.end, "Invalid token");
+                        this.expectCount("Ignored parameters", 4 + (isNested ? 1 : 0));
+                        return true;
+                    };
+
                     if (startType !== undefined) {
                         if (startType === "next") {
                             const startType = this.expectText("Expected start type", "map", "save", "cm", "now");
@@ -70,7 +91,10 @@ export class TASScript {
                             if (startType !== undefined) {
                                 if (startType === "now")
                                     this.expectCount("Ignored parameters", 3);
-                                else {
+                                else outer: {
+                                    const shouldReturn = checkStartTypeWithNumber(startType, true);
+                                    if (shouldReturn) break outer;
+
                                     this.expectText("Expected parameter");
                                     this.expectCount("Ignored parameters", 4);
                                 }
@@ -79,7 +103,10 @@ export class TASScript {
                         else {
                             if (startType === "now")
                                 this.expectCount("Ignored parameters", 2);
-                            else {
+                            else outer: {
+                                const shouldReturn = checkStartTypeWithNumber(startType, false);
+                                if (shouldReturn) break outer;
+
                                 this.expectText("Expected parameter");
                                 this.expectCount("Ignored parameters", 3);
                             }
