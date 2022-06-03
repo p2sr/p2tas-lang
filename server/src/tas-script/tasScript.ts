@@ -155,7 +155,9 @@ export class TASScript {
                         DiagnosticCollector.addDiagnostic(maybePlus.line, maybePlus.start, maybePlus.end, "First framebulk cannot be relative");
 
                     const tick = this.expectNumber("Expected tick") || 0;
-                    this.expectType("Expected '>'", TokenType.RightAngle);
+                    const angle_token = this.expectType("Expected '>' or '>>'", TokenType.RightAngle, TokenType.DoubleRightAngle);
+
+                    const skip_to_tools = (angle_token !== undefined) && (angle_token.type === TokenType.DoubleRightAngle);
 
                     var activeTools = this.previousLine()!.activeTools.map((val) => val.copy());
 
@@ -176,29 +178,32 @@ export class TASScript {
                     }
 
                     blk: {
-                        // Movement field
-                        this.expectVector();
-                        if (this.tokens[this.lineIndex].length <= this.tokenIndex) break blk;
-                        this.expectType("Expected '|'", TokenType.Pipe);
 
-                        // Angles field
-                        this.expectVector();
-                        if (this.tokens[this.lineIndex].length <= this.tokenIndex) break blk;
-                        this.expectType("Expected '|'", TokenType.Pipe);
+                        if (!skip_to_tools) {
+                            // Movement field
+                            this.expectVector();
+                            if (this.tokens[this.lineIndex].length <= this.tokenIndex) break blk;
+                            this.expectType("Expected '|'", TokenType.Pipe);
 
-                        // Buttons field
-                        this.parseButtonsField();
-                        if (this.tokens[this.lineIndex].length <= this.tokenIndex) break blk;
-                        this.expectType("Expected '|'", TokenType.Pipe);
+                            // Angles field
+                            this.expectVector();
+                            if (this.tokens[this.lineIndex].length <= this.tokenIndex) break blk;
+                            this.expectType("Expected '|'", TokenType.Pipe);
 
-                        // Commands field
-                        // Allow any number tokens until pipe or end of line
-                        while (this.tokenIndex < this.tokens[this.lineIndex].length && this.currentToken().type !== TokenType.Pipe)
+                            // Buttons field
+                            this.parseButtonsField();
+                            if (this.tokens[this.lineIndex].length <= this.tokenIndex) break blk;
+                            this.expectType("Expected '|'", TokenType.Pipe);
+
+                            // Commands field
+                            // Allow any number tokens until pipe or end of line
+                            while (this.tokenIndex < this.tokens[this.lineIndex].length && this.currentToken().type !== TokenType.Pipe)
+                                this.tokenIndex++;
+
                             this.tokenIndex++;
-
-                        this.tokenIndex++;
-                        if (this.tokens[this.lineIndex].length <= this.tokenIndex) break blk;
-
+                            if (this.tokens[this.lineIndex].length <= this.tokenIndex) break blk;
+                        }
+                        
                         // Tools field
                         this.parseToolsField(activeTools);
                         if (this.tokens[this.lineIndex].length > this.tokenIndex) {
@@ -451,13 +456,12 @@ export class TASScript {
         }
     }
 
-    private expectType(errorText: string, type: TokenType): Token | undefined {
+    private expectType(errorText: string, ...types: TokenType[]): Token | undefined {
         const token = this.next(errorText);
         if (token === undefined) return;
-        if (token.type !== type)
-            DiagnosticCollector.addDiagnostic(token.line, token.start, token.end, errorText);
+        for (const opt of types) if (token.type === opt) return token;
 
-        return token;
+        DiagnosticCollector.addDiagnostic(token.line, token.start, token.end, errorText);
     }
 
     private expectVector() {

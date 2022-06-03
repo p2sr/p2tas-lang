@@ -1,7 +1,7 @@
 import { DiagnosticCollector } from "./diagnosticCollector";
 
 export enum TokenType {
-    Plus, Number, RightAngle, Pipe, Semicolon, String, Whitespace,
+    Plus, Number, RightAngle, DoubleRightAngle, Pipe, Semicolon, String, Whitespace,
     SingleLineComment,
     MultilineCommentOpen, MultilineCommentClose,
 }
@@ -181,7 +181,9 @@ namespace Tokenizer {
 
         switch (c) {
             case "+": return TokenType.Plus;
-            case ">": return TokenType.RightAngle;
+            case ">": 
+                if (accept(anyOf(">"))) return TokenType.DoubleRightAngle;
+                else return TokenType.RightAngle;
             case "|": return TokenType.Pipe;
             case ";": return TokenType.Semicolon;
             case "/":
