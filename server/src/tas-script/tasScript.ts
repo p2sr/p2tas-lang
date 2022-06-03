@@ -53,7 +53,7 @@ export class TASScript {
             switch (state) {
                 case ParserState.Version:
                     this.expectText("Expected version", "version");
-                    this.expectNumber("Invalid version", 1, 2);
+                    this.expectNumber("Invalid version", 1, 2, 3);
                     this.expectCount("Ignored parameters", 2);
 
                     this.lines.set(currentLine, new ScriptLine(currentLineText, 0, false, LineType.Version, [], this.tokens[this.lineIndex]));
