@@ -4,7 +4,7 @@ import { TASTool } from "./tasTool";
 import { Token, tokenize, TokenType } from "./tokenizer";
 
 enum ParserState {
-    Version, Start, Framebulks
+    Version, Start, RngManip, Framebulks
 }
 
 export class TASScript {
@@ -114,6 +114,18 @@ export class TASScript {
                     }
 
                     this.lines.set(currentLine, new ScriptLine(currentLineText, 0, false, LineType.Start, [], this.tokens[this.lineIndex]));
+                    state = ParserState.RngManip;
+                    break;
+                case ParserState.RngManip:
+                    const token = this.next("Expected framebulks or rngmanip");
+                    if (token === undefined) break;
+                    
+                    if (token.type === TokenType.String && token.text === "rngmanip") {
+                        this.expectText("Expected parameter");
+                        this.expectCount("Ignored parameters", 2)
+                    } else {
+                        this.lineIndex--;
+                    }
                     state = ParserState.Framebulks;
                     break;
                 case ParserState.Framebulks:
@@ -533,7 +545,12 @@ export class TASScript {
 }
 
 export enum LineType {
-    Version, Start, RepeatStart, End, Framebulk
+    Version,
+    Start,
+    RngManip,
+    RepeatStart,
+    End,
+    Framebulk
 }
 
 export class ScriptLine {
