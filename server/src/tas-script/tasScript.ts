@@ -247,7 +247,7 @@ export class TASScript {
         else if (state === ParserState.Start) {
             DiagnosticCollector.addDiagnosticToLine(integer.MAX_VALUE, 0, "Expected start line");
         }
-        else if (state === ParserState.Framebulks && isFirstFramebulk) {
+        else if ((state === ParserState.RngManip || state === ParserState.Framebulks) && isFirstFramebulk) {
             DiagnosticCollector.addDiagnosticToLine(integer.MAX_VALUE, 0, "Expected framebulks");
         }
 
