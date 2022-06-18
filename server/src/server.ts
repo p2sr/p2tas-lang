@@ -8,10 +8,10 @@ import {
 	TextDocumentSyncKind,
 	MarkupKind,
 } from 'vscode-languageserver/node';
-import { endCompletion, repeatCompletion, startCompletion, startTypes } from './tas-script/otherCompletion';
+import { endCompletion, repeatCompletion, startCompletion, startTypes, versionCompletion } from './tas-script/otherCompletion';
 import { LineType, ScriptLine, TASScript } from './tas-script/tasScript';
 import { TASTool } from './tas-script/tasTool';
-import { TokenType } from './tas-script/tokenizer';
+import { Token, TokenType } from './tas-script/tokenizer';
 
 const connection = createConnection(ProposedFeatures.all);
 const documents: Map<string, TASScript> = new Map();
@@ -54,30 +54,28 @@ connection.onCompletion((params: TextDocumentPositionParams): CompletionItem[] =
 	const script = documents.get(params.textDocument.uri);
 	if (script === undefined) return [];
 	const line = script.lines.get(params.position.line);
-	if (line === undefined) return [];
 
-	if (line.type === LineType.Framebulk) {
-		if (line.lineText.split('|').length - 1 !== 4) {
-			if (line.tokens.length === 0) {
-				return [startCompletion, repeatCompletion, endCompletion].map((item) => {
-					return {
-						label: item.name,
-						kind: CompletionItemKind.Method,
-						documentation: {
-							kind: MarkupKind.Markdown,
-							value: item.description
-						}
-					};
-				});
-			}
-
+	if (line === undefined || line.type === LineType.Empty) {
+		return [versionCompletion, startCompletion, repeatCompletion, endCompletion].map((val) => {
+			return {
+				label: val.name,
+				kind: CompletionItemKind.Method,
+				documentation: {
+					kind: MarkupKind.Markdown,
+					value: val.description,
+				}
+			};
+		});
+	}
+	else if (line.type === LineType.Framebulk) {
+		// If we don't have 4 pipes, dont suggest
+		if (line.tokens.filter(tok => tok.type === TokenType.Pipe).length !== 4)
 			return [];
-		}
 
 		const pipeIndex = line.lineText.lastIndexOf('|');
 		if (params.position.character < pipeIndex) return [];
 
-		const [toolName, encounteredWords] = getToolAndArguments(params.position.character, line.lineText, pipeIndex);
+		const [toolName, encounteredWords] = getToolAndArguments(params.position.character, line.tokens);
 
 		if (toolName.length === 0) {
 			// Complete tool
@@ -130,7 +128,7 @@ connection.onCompletion((params: TextDocumentPositionParams): CompletionItem[] =
 		}
 	}
 	else if (line.type === LineType.Start) {
-		const [toolName, encounteredWords] = getToolAndArguments(params.position.character, line.lineText);
+		const [toolName, encounteredWords] = getToolAndArguments(params.position.character, line.tokens);
 		if (toolName !== "start") return [];
 
 		return Object.entries(startTypes)
@@ -154,27 +152,35 @@ connection.onCompletion((params: TextDocumentPositionParams): CompletionItem[] =
 			});
 	}
 
+
 	return [];
 });
 
-function getToolAndArguments(character: number, lineText: string, lowestCharacterIndex: number = 0): [string, string[]] {
+function getToolAndArguments(character: number, tokens: Token[]): [string, string[]] {
 	var encounteredWords: string[] = [];
 	var tool = "";
-	var index = character;
-	while (index >= lowestCharacterIndex) {
-		const char = lineText.charAt(index);
-		if (char === ' ') {
-			if (tool.length > 0) {
-				encounteredWords.push(tool);
-				tool = "";
+
+	var index = tokens.length;
+	outer: {
+		while (--index >= 0) {
+			const token = tokens[index];
+			if (character < token.end) continue;
+			if (token.type === TokenType.Pipe || token.type === TokenType.Semicolon) break outer;
+			if (index - 1 < 0) {
+				tool = token.text;
+				break;
+			}
+
+			switch (tokens[index - 1].type) {
+				case TokenType.String:
+					encounteredWords.push(token.text);
+					break;
+				case TokenType.Semicolon:
+				case TokenType.Pipe:
+					tool = token.text;
+					break outer;
 			}
 		}
-		else if (char === '|' || char === ';')
-			break;
-		else if (char !== '\r' && char !== '\n')
-			tool = char + tool;
-
-		index--;
 	}
 
 	return [tool, encounteredWords];
@@ -267,6 +273,17 @@ connection.onHover((params, cancellationToken, workDoneProgressReporter, resultP
 				contents: {
 					kind: MarkupKind.Markdown,
 					value: endCompletion.description
+				}
+			};
+		}
+	}
+	else if (line.type === LineType.Version) {
+		if (line.tokens.length > 0 && line.tokens[0].type === TokenType.String && line.tokens[0].text === "version" &&
+			params.position.character >= line.tokens[0].start && params.position.character <= line.tokens[0].end) {
+			return {
+				contents: {
+					kind: MarkupKind.Markdown,
+					value: versionCompletion.description
 				}
 			};
 		}

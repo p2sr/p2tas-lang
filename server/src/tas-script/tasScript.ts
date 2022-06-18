@@ -67,7 +67,7 @@ export class TASScript {
                     const startType = this.expectText("Expected start type", "map", "save", "cm", "now", "next");
 
                     const checkStartTypeWithNumber = (startType: string, isNested: boolean): boolean => {
-                        if (startType !== "map" && startType !== "save") return false;
+                        if (startType !== "map" && startType !== "save" && startType !== "cm") return false;
 
                         if (!this.isNextType(TokenType.Number)) return false;
 
