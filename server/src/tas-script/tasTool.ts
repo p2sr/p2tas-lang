@@ -49,6 +49,7 @@ export namespace TASTool {
                 { text: "left", type: TokenType.String, required: false, description: "Autostrafer will try to strafe left." },
                 { text: "right", type: TokenType.String, required: false, description: "Autostrafer will try to strafe right." },
                 { text: "nopitchlock", type: TokenType.String, required: false, description: "Make the autostrafer not clamp the pitch. The autostrafer will always clamp your pitch angle (up and down) between -30 and 30 when midair, as it gives the fastest possible acceleration (forward movement is being scaled by a cosine of that angle while being airborne). This argument will tell the autostrafer that you wish to enable sub-optimal strafing (this is useful when you need to hit a shot while strafing for example)." },
+                { text: "letspeedlock", type: TokenType.String, required: false, description: "Let the autostrafer speedlock. This option only exists from version 4 onwards and mimics old behavior." },
                 { type: TokenType.Number, unit: "ups", required: false },
                 { type: TokenType.Number, unit: "deg", required: false },
             ],
