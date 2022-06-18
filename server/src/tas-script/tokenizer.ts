@@ -51,7 +51,7 @@ function removeComments(tokens: Token[][]) {
                     tokens[lineIndex].splice(tokenIndex, 1);
                     continue;
                 }
-                
+
                 if (lineIndex === multilineCommentStartLine) {
                     tokens[lineIndex].splice(multilineCommentStartIndex, tokenIndex - multilineCommentStartIndex + 1)
                     tokenIndex = multilineCommentStartIndex;
@@ -166,6 +166,12 @@ namespace Tokenizer {
             while (accept(numberPredicate));
             accept(anyOf("."));
             while (accept(numberPredicate));
+
+            if (accept(anyOf("e"))) {
+                if (!accept(numberPredicate)) return TokenType.String;
+                while (accept(numberPredicate));
+            }
+
             return TokenType.Number;
         }
 
@@ -181,7 +187,7 @@ namespace Tokenizer {
 
         switch (c) {
             case "+": return TokenType.Plus;
-            case ">": 
+            case ">":
                 if (accept(anyOf(">"))) return TokenType.DoubleRightAngle;
                 else return TokenType.RightAngle;
             case "|": return TokenType.Pipe;
@@ -189,10 +195,10 @@ namespace Tokenizer {
             case "/":
                 if (accept(anyOf("/"))) return TokenType.SingleLineComment;
                 else if (accept(anyOf("*"))) return TokenType.MultilineCommentOpen;
-                return TokenType.String; // ?
+                return TokenType.String;
             case "*":
                 if (accept(anyOf("/"))) return TokenType.MultilineCommentClose;
-                return TokenType.String; // ?
+                return TokenType.String;
             default: return TokenType.String;
         }
     }
