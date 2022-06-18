@@ -335,9 +335,25 @@ export class TASScript {
 
             var toolDuration: number | undefined = undefined;
             if (tool.isOrderDetermined) blk: {
-                for (var i = 0; i < tool.arguments.length; i++) {
-                    const arg = tool.arguments[i];
+                var queue: TASTool.ToolArgument[] = [];
+
+                var i = 0;
+                while (true) {
+                    if (i === tool.arguments.length && queue.length === 0) break;
+
+                    var arg: TASTool.ToolArgument;
+                    if (queue.length !== 0) {
+                        arg = queue[0];
+                        queue.splice(0, 1);
+                    }
+                    else {
+                        arg = tool.arguments[i];
+                        i++;
+                    }
+
                     if (arg.required) {
+                        if (arg.children !== undefined) queue.splice(0, 0, ...arg.children!);
+
                         if (this.isNextType(TokenType.Semicolon)) {
                             const lastArgumentToken = this.tokens[this.lineIndex][this.tokenIndex - 2];
                             DiagnosticCollector.addDiagnostic(lastArgumentToken.line, lastArgumentToken.end, lastArgumentToken.end + 1, `Expected ${TokenType[arg.type].toLowerCase()}`);
@@ -348,31 +364,30 @@ export class TASScript {
                             this.validateArgument(arg);
                             if (i === tool.durationIndex)
                                 toolDuration = +this.tokens[this.lineIndex][this.tokenIndex - 1].text;
-                            continue;
                         }
-
-                        // Skip arguments that are now not enabled
-                        if (arg.enablesUpTo !== undefined) i = arg.enablesUpTo;
                     }
                     else {
                         if (this.isNextType(arg.type)) {
-                            if (arg.type === TokenType.String && arg.text !== undefined) {
+                            if (arg.type === TokenType.String && arg.text !== undefined) inner: {
                                 const token = this.tokens[this.lineIndex][this.tokenIndex - 1];
-                                if (arg.text! === token.text) continue;
+                                if (arg.text! === token.text) break inner;
 
-                                if (arg.enablesUpTo !== undefined) i = arg.enablesUpTo;
+                                if (arg.otherwiseChildren !== undefined) queue.splice(0, 0, ...arg.otherwiseChildren!);
                                 this.tokenIndex--;
                                 continue;
                             }
+                            else {
+                                this.validateArgument(arg);
+                            }
 
-                            this.validateArgument(arg);
                             if (i === tool.durationIndex)
                                 toolDuration = +this.tokens[this.lineIndex][this.tokenIndex - 1].text;
+
+                            if (arg.children !== undefined) queue.splice(0, 0, ...arg.children!);
+                            continue;
                         }
-                        else {
-                            // Skip arguments that are now not enabled
-                            if (arg.enablesUpTo !== undefined) i = arg.enablesUpTo;
-                        }
+
+                        if (arg.otherwiseChildren !== undefined) queue.splice(0, 0, ...arg.otherwiseChildren!);
                     }
                 }
 

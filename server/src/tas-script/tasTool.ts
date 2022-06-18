@@ -30,7 +30,8 @@ export namespace TASTool {
             readonly text?: string,
             readonly unit?: string, // if it ends with a '?', it's optional (see absmov)
             readonly description?: string,
-            readonly enablesUpTo?: number,
+            readonly children?: ToolArgument[],
+            readonly otherwiseChildren?: ToolArgument[], // children if this argument didn't match (better name pls?)
         ) { }
     }
 
@@ -95,9 +96,15 @@ export namespace TASTool {
             hasOff: true,
             durationIndex: 3,
             arguments: [
-                { type: TokenType.Number, required: true },
-                { type: TokenType.Number, required: true },
-                { type: TokenType.Number, required: true },
+                {
+                    type: TokenType.String, text: "ent", required: false, children: [
+                        { type: TokenType.String, required: true },
+                    ], otherwiseChildren: [
+                        { type: TokenType.Number, required: true },
+                        { type: TokenType.Number, required: true },
+                        { type: TokenType.Number, required: true },
+                    ]
+                },
                 { type: TokenType.Number, required: false },
             ],
             description: "**Syntax:** ```autoaim <x> <y> <z> [time]```\n\nThe Auto Aim tool will automatically aim towards a specified point in 3D space.\n\n**Example:** ```autoaim 0 0 0 20```",
@@ -118,17 +125,29 @@ export namespace TASTool {
             hasOff: false,
             durationIndex: -1,
             arguments: [
-                { text: "pos", type: TokenType.String, required: false, enablesUpTo: 3 },
-                { type: TokenType.Number, required: true },
-                { type: TokenType.Number, required: true },
-                { type: TokenType.Number, required: true },
-                { text: "ang", type: TokenType.String, required: false, enablesUpTo: 6 },
-                { type: TokenType.Number, required: true },
-                { type: TokenType.Number, required: true },
-                { text: "posepsilon", type: TokenType.String, required: false, enablesUpTo: 8 },
-                { type: TokenType.Number, required: true },
-                { text: "angepsilon", type: TokenType.String, required: false, enablesUpTo: 10 },
-                { type: TokenType.Number, required: true },
+                {
+                    text: "pos", type: TokenType.String, required: false, children: [
+                        { type: TokenType.Number, required: true },
+                        { type: TokenType.Number, required: true },
+                        { type: TokenType.Number, required: true },
+                    ]
+                },
+                {
+                    text: "ang", type: TokenType.String, required: false, children: [
+                        { type: TokenType.Number, required: true },
+                        { type: TokenType.Number, required: true },
+                    ]
+                },
+                {
+                    text: "posepsilon", type: TokenType.String, required: false, children: [
+                        { type: TokenType.Number, required: true },
+                    ]
+                },
+                {
+                    text: "angepsilon", type: TokenType.String, required: false, children: [
+                        { type: TokenType.Number, required: true },
+                    ]
+                },
             ],
             description: "**Syntax:** ```check [pos x y z] [ang pitch yaw] [posepsilon val] [angepsilon val]```\n\nThe check tool accepts a target position and angle, and a precision value (posepsilon (default: 0.5), angepsilon (default: 0.2)). **Before** the tick it is on, it will check whether the player position is close to (meaning \"within posepsilon / angepsilon units\") the target position, and if not, replay the active script. It will do this a maximum of ```sar_tas_check_max_replays``` (default 15) times.\n\n**Example:** ```check pos 100 250 312.7```",
             index: 0,

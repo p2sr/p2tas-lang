@@ -39,7 +39,7 @@
 			},
 			{
 				"name": "variable.parameter",
-				"match": "\\b(on|off|none|vec|ang|veccam|max|keep|forward|forwardvel|left|right|nopitchlock|letspeedlock|pos|posepsilon|angepsilon)\\b"
+				"match": "\\b(on|off|none|vec|ang|veccam|max|keep|forward|forwardvel|left|right|nopitchlock|letspeedlock|pos|posepsilon|angepsilon|ent)\\b"
 			},
 			{
 				"name": "ups_or_deg",
