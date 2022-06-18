@@ -2,6 +2,8 @@
 	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
 	"name": "Portal 2 TAS script",
 	"patterns": [{"include": "#version"}, {"include": "#start"}, {"include": "#rngmanip"}, {"include": "#framebulk"}, {"include": "#loop"}],
+	"foldingStartMarker": "^\\s*repeat",
+	"foldingStopMarker": "^\\s*end",
 	"repository": {
 		"version": {
 			"patterns": [{
