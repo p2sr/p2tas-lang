@@ -22,7 +22,7 @@ connection.onInitialize((params: InitializeParams) => {
 			textDocumentSync: TextDocumentSyncKind.Full,
 			hoverProvider: true,
 			completionProvider: {
-				triggerCharacters: [" ", ";", "|"]
+				triggerCharacters: [" ", ";", "|", ">"]
 			}
 		}
 	};
@@ -75,57 +75,13 @@ connection.onCompletion((params: TextDocumentPositionParams): CompletionItem[] =
 		const pipeIndex = line.lineText.lastIndexOf('|');
 		if (params.position.character < pipeIndex) return [];
 
-		const [toolName, encounteredWords] = getToolAndArguments(params.position.character, line.tokens);
+		return completeToolAndArguments(line, params.position.character);
+	}
+	else if (line.type === LineType.ToolBulk) {
+		const angleIndex = line.lineText.lastIndexOf('>');
+		if (params.position.character < angleIndex) return [];
 
-		if (toolName.length === 0) {
-			// Complete tool
-			return Object.entries(TASTool.tools).map(([key, value]) => {
-				return {
-					label: key,
-					kind: CompletionItemKind.Method,
-					documentation: {
-						kind: MarkupKind.Markdown,
-						value: value.description
-					}
-				};
-			});
-		}
-		else {
-			// Complete tool arguments
-			// Check if tool exists
-			if (!TASTool.tools.hasOwnProperty(toolName)) return [];
-			if (encounteredWords.includes("off")) return [];
-
-			const tool = TASTool.tools[toolName];
-			const result: CompletionItem[] = [];
-			if (encounteredWords.length === 0 && tool.hasOff) {
-				result.push({
-					label: "off",
-					kind: CompletionItemKind.Field,
-					documentation: {
-						kind: MarkupKind.Markdown,
-						value: `Disables ${"```"}${toolName}${"```"}`
-					}
-				});
-			}
-
-			const toolArguments = tool.arguments;
-			result.push(...toolArguments
-				.filter((arg) => {
-					if (arg.type !== TokenType.String) return false;
-					return !encounteredWords.includes(arg.text!);
-				}).map((arg) => {
-					return {
-						label: arg.text!,
-						kind: CompletionItemKind.Field,
-						documentation: arg.description !== undefined ? {
-							kind: MarkupKind.Markdown,
-							value: arg.description!
-						} : undefined
-					};
-				}));
-			return result;
-		}
+		return completeToolAndArguments(line, params.position.character);
 	}
 	else if (line.type === LineType.Start) {
 		const [toolName, encounteredWords] = getToolAndArguments(params.position.character, line.tokens);
@@ -152,9 +108,62 @@ connection.onCompletion((params: TextDocumentPositionParams): CompletionItem[] =
 			});
 	}
 
-
 	return [];
 });
+
+function completeToolAndArguments(line: ScriptLine, character: number): CompletionItem[] {
+	const [toolName, encounteredWords] = getToolAndArguments(character, line.tokens);
+
+	if (toolName.length === 0) {
+		// Complete tool
+		return Object.entries(TASTool.tools).map(([key, value]) => {
+			return {
+				label: key,
+				kind: CompletionItemKind.Method,
+				documentation: {
+					kind: MarkupKind.Markdown,
+					value: value.description
+				}
+			};
+		});
+	}
+	else {
+		// Complete tool arguments
+		// Check if tool exists
+		if (!TASTool.tools.hasOwnProperty(toolName)) return [];
+		if (encounteredWords.includes("off")) return [];
+
+		const tool = TASTool.tools[toolName];
+		const result: CompletionItem[] = [];
+		if (encounteredWords.length === 0 && tool.hasOff) {
+			result.push({
+				label: "off",
+				kind: CompletionItemKind.Field,
+				documentation: {
+					kind: MarkupKind.Markdown,
+					value: `Disables ${"```"}${toolName}${"```"}`
+				}
+			});
+		}
+
+		const toolArguments = tool.arguments;
+		result.push(...toolArguments
+			.filter((arg) => {
+				if (arg.type !== TokenType.String) return false;
+				return !encounteredWords.includes(arg.text!);
+			}).map((arg) => {
+				return {
+					label: arg.text!,
+					kind: CompletionItemKind.Field,
+					documentation: arg.description !== undefined ? {
+						kind: MarkupKind.Markdown,
+						value: arg.description!
+					} : undefined
+				};
+			}));
+		return result;
+	}
+}
 
 function getToolAndArguments(character: number, tokens: Token[]): [string, string[]] {
 	var encounteredWords: string[] = [];
@@ -165,7 +174,7 @@ function getToolAndArguments(character: number, tokens: Token[]): [string, strin
 		while (--index >= 0) {
 			const token = tokens[index];
 			if (character < token.end) continue;
-			if (token.type === TokenType.Pipe || token.type === TokenType.Semicolon) break outer;
+			if (token.type === TokenType.Pipe || token.type === TokenType.Semicolon || token.type === TokenType.DoubleRightAngle) break outer;
 			if (index - 1 < 0) {
 				tool = token.text;
 				break;
@@ -177,6 +186,7 @@ function getToolAndArguments(character: number, tokens: Token[]): [string, strin
 					break;
 				case TokenType.Semicolon:
 				case TokenType.Pipe:
+				case TokenType.DoubleRightAngle:
 					tool = token.text;
 					break outer;
 			}
@@ -195,12 +205,12 @@ connection.onHover((params, cancellationToken, workDoneProgressReporter, resultP
 	const line = script.lines.get(params.position.line);
 	if (line === undefined) return undefined;
 
-	if (line.type === LineType.Framebulk) {
+	if (line.type === LineType.Framebulk || line.type === LineType.ToolBulk) {
 		for (var i = 0; i < line.tokens.length; i++) {
 			const token = line.tokens[i];
 			if (params.position.character >= token.start && params.position.character <= token.end) {
 				if (token.type === TokenType.Number) {
-					if (i + 1 >= line.tokens.length || line.tokens[i + 1].type !== TokenType.RightAngle) continue;
+					if (i + 1 >= line.tokens.length || (line.tokens[i + 1].type !== TokenType.RightAngle && line.tokens[i + 1].type !== TokenType.DoubleRightAngle)) continue;
 					return { contents: [`Tick: ${line.tick}`] };
 				}
 				else if (token.type !== TokenType.String) continue;

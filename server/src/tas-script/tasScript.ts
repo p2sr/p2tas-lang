@@ -174,7 +174,7 @@ export class TASScript {
                     const tick = this.expectNumber("Expected tick") || 0;
 
                     const angleToken = this.expectType("Expected '>' or '>>'", TokenType.RightAngle, TokenType.DoubleRightAngle);
-                    const skipToTools = angleToken !== undefined && angleToken.type === TokenType.DoubleRightAngle;
+                    const isToolBulk = angleToken !== undefined && angleToken.type === TokenType.DoubleRightAngle;
 
                     var activeTools = this.previousLine()!.activeTools.map((val) => val.copy());
 
@@ -202,7 +202,7 @@ export class TASScript {
                         activeTools.sort((a, b) => TASTool.tools[a.tool].index - TASTool.tools[b.tool].index);
 
                     blk: {
-                        if (!skipToTools) {
+                        if (!isToolBulk) {
                             // Movement field
                             this.expectVector();
                             if (this.tokens[this.lineIndex].length <= this.tokenIndex) break blk;
@@ -235,7 +235,17 @@ export class TASScript {
                         }
                     }
 
-                    this.lines.set(currentLine, new ScriptLine(currentLineText, absoluteTick, isRelative, LineType.Framebulk, activeTools, this.tokens[this.lineIndex]));
+                    this.lines.set(
+                        currentLine,
+                        new ScriptLine(
+                            currentLineText,
+                            absoluteTick,
+                            isRelative,
+                            !isToolBulk ? LineType.Framebulk : LineType.ToolBulk,
+                            activeTools,
+                            this.tokens[this.lineIndex]
+                        )
+                    );
                     isFirstFramebulk = false;
                 default:
                     break;
@@ -577,6 +587,7 @@ export enum LineType {
     RepeatStart,
     End,
     Framebulk,
+    ToolBulk,
     Empty,
 }
 
