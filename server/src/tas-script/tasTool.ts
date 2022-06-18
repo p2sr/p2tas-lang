@@ -5,7 +5,7 @@ export namespace TASTool {
         constructor(
             public tool: string,
             public ticksRemaining?: number
-        ) {}
+        ) { }
 
         copy(): Tool {
             return new Tool(this.tool, this.ticksRemaining);
@@ -19,6 +19,7 @@ export namespace TASTool {
             readonly durationIndex: number,
             readonly arguments: ToolArgument[],
             readonly description: string,
+            readonly index: number, // priority index from SAR (- 1) (used only in version >= 3)
         }
     }
 
@@ -53,7 +54,8 @@ export namespace TASTool {
                 { type: TokenType.Number, unit: "ups", required: false },
                 { type: TokenType.Number, unit: "deg", required: false },
             ],
-            description: "**Syntax:** ```strafe [parameters]```\n\nThe strafe tool will adjust player input to get a different kind of strafing depending on parameters.\n\n**Example:** ```strafe 299.999ups left veccam```"
+            description: "**Syntax:** ```strafe [parameters]```\n\nThe strafe tool will adjust player input to get a different kind of strafing depending on parameters.\n\n**Example:** ```strafe 299.999ups left veccam```",
+            index: 5,
         },
         autojump: {
             isOrderDetermined: true,
@@ -62,7 +64,8 @@ export namespace TASTool {
             arguments: [
                 { text: "on", type: TokenType.String, required: false, description: "Enables ```autojump```." },
             ],
-            description: "**Syntax:** ```autojump [on]```\n\nAnything other than ```on``` will disable the tool.\n\nAutojump tool will change the jump button state depending on whether the player is grounded or not, resulting in automatically jumping on the earliest contact with a ground.\n\n**Example:** ```autojump on```"
+            description: "**Syntax:** ```autojump [on]```\n\nAnything other than ```on``` will disable the tool.\n\nAutojump tool will change the jump button state depending on whether the player is grounded or not, resulting in automatically jumping on the earliest contact with a ground.\n\n**Example:** ```autojump on```",
+            index: 3,
         },
         absmov: {
             isOrderDetermined: true,
@@ -73,6 +76,7 @@ export namespace TASTool {
                 { type: TokenType.Number, required: false },
             ],
             description: "**Syntax:** ```absmov <angle> [strength]```\n\nAbsolute movement tool will generate movement values depending on the absolute move direction you provide in degrees. Giving off as an argument will disable the tool. The strength parameter must be between 0 and 1 (default) and controls how fast the player will move.\n\n**Example:** ```absmov 90 0.5```",
+            index: 4,
         },
         setang: {
             isOrderDetermined: true,
@@ -83,7 +87,8 @@ export namespace TASTool {
                 { type: TokenType.Number, required: true },
                 { type: TokenType.Number, required: false },
             ],
-            description: "**Syntax:** ```setang <pitch> <yaw> [time]```\n\nThis tool works basically the same as setang console command. It will adjust the view analog in a way so the camera is looking towards given angles.\n\n**Example:** ```setang 0 0 20```"
+            description: "**Syntax:** ```setang <pitch> <yaw> [time]```\n\nThis tool works basically the same as setang console command. It will adjust the view analog in a way so the camera is looking towards given angles.\n\n**Example:** ```setang 0 0 20```",
+            index: 1,
         },
         autoaim: {
             isOrderDetermined: true,
@@ -95,7 +100,8 @@ export namespace TASTool {
                 { type: TokenType.Number, required: true },
                 { type: TokenType.Number, required: false },
             ],
-            description: "**Syntax:** ```autoaim <x> <y> <z> [time]```\n\nThe Auto Aim tool will automatically aim towards a specified point in 3D space.\n\n**Example:** ```autoaim 0 0 0 20```"
+            description: "**Syntax:** ```autoaim <x> <y> <z> [time]```\n\nThe Auto Aim tool will automatically aim towards a specified point in 3D space.\n\n**Example:** ```autoaim 0 0 0 20```",
+            index: 2,
         },
         decel: {
             isOrderDetermined: true,
@@ -104,7 +110,8 @@ export namespace TASTool {
             arguments: [
                 { type: TokenType.Number, unit: "ups?", required: false },
             ],
-            description: "**Syntax:** ```decel <speed>```\n\nThe decelaration tool will slow down as quickly as possible to the given speed.\n\n**Example:** ```decel 100```"
+            description: "**Syntax:** ```decel <speed>```\n\nThe decelaration tool will slow down as quickly as possible to the given speed.\n\n**Example:** ```decel 100```",
+            index: 6,
         },
         check: {
             isOrderDetermined: true,
@@ -123,7 +130,8 @@ export namespace TASTool {
                 { text: "angepsilon", type: TokenType.String, required: false, enablesUpTo: 10 },
                 { type: TokenType.Number, required: true },
             ],
-            description: "**Syntax:** ```check [pos x y z] [ang pitch yaw] [posepsilon val] [angepsilon val]```\n\nThe check tool accepts a target position and angle, and a precision value (posepsilon (default: 0.5), angepsilon (default: 0.2)). **Before** the tick it is on, it will check whether the player position is close to (meaning \"within posepsilon / angepsilon units\") the target position, and if not, replay the active script. It will do this a maximum of ```sar_tas_check_max_replays``` (default 15) times.\n\n**Example:** ```check pos 100 250 312.7```"
+            description: "**Syntax:** ```check [pos x y z] [ang pitch yaw] [posepsilon val] [angepsilon val]```\n\nThe check tool accepts a target position and angle, and a precision value (posepsilon (default: 0.5), angepsilon (default: 0.2)). **Before** the tick it is on, it will check whether the player position is close to (meaning \"within posepsilon / angepsilon units\") the target position, and if not, replay the active script. It will do this a maximum of ```sar_tas_check_max_replays``` (default 15) times.\n\n**Example:** ```check pos 100 250 312.7```",
+            index: 0,
         }
     };
 }

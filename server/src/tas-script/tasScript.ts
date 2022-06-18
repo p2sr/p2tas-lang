@@ -8,8 +8,9 @@ enum ParserState {
 }
 
 export class TASScript {
-
     lines = new Map<number, ScriptLine>();
+
+    scriptVersion = 4;
 
     tokens: Token[][] = [];
     lineIndex = 0;
@@ -56,7 +57,7 @@ export class TASScript {
             switch (state) {
                 case ParserState.Version:
                     this.expectText("Expected version", "version");
-                    this.expectNumber("Invalid version", 1, 2, 3, 4);
+                    this.scriptVersion = this.expectNumber("Invalid version", 1, 2, 3, 4) ?? 4; // Assume version 4 if not present
                     this.expectCount("Ignored parameters", 2);
 
                     this.lines.set(currentLine, new ScriptLine(currentLineText, 0, false, LineType.Version, [], this.tokens[this.lineIndex]));
@@ -171,9 +172,9 @@ export class TASScript {
 
                     const tickToken = this.currentToken();
                     const tick = this.expectNumber("Expected tick") || 0;
-                    const angle_token = this.expectType("Expected '>' or '>>'", TokenType.RightAngle, TokenType.DoubleRightAngle);
 
-                    const skip_to_tools = (angle_token !== undefined) && (angle_token.type === TokenType.DoubleRightAngle);
+                    const angleToken = this.expectType("Expected '>' or '>>'", TokenType.RightAngle, TokenType.DoubleRightAngle);
+                    const skipToTools = angleToken !== undefined && angleToken.type === TokenType.DoubleRightAngle;
 
                     var activeTools = this.previousLine()!.activeTools.map((val) => val.copy());
 
@@ -196,9 +197,12 @@ export class TASScript {
                         }
                     }
 
-                    blk: {
+                    // Sort tools according to their priority index from SAR if version >= 3
+                    if (this.scriptVersion >= 3)
+                        activeTools.sort((a, b) => TASTool.tools[a.tool].index - TASTool.tools[b.tool].index);
 
-                        if (!skip_to_tools) {
+                    blk: {
+                        if (!skipToTools) {
                             // Movement field
                             this.expectVector();
                             if (this.tokens[this.lineIndex].length <= this.tokenIndex) break blk;
@@ -375,7 +379,7 @@ export class TASScript {
                 if (tool.durationIndex === -1)
                     activeTools.push(new TASTool.Tool(toolName));
                 else {
-                    if (toolDuration !== undefined)
+                    if (toolName === "autoaim" || toolDuration !== undefined)
                         activeTools.push(new TASTool.Tool(toolName, toolDuration));
                 }
 
