@@ -18,7 +18,10 @@ export class TASScript {
     private previousLine(): ScriptLine | undefined {
         const entries = Array.from(this.lines.entries());
         if (entries.length === 0) return undefined;
-        return entries[entries.length - 1][1];
+
+        var i = entries.length - 1;
+        while (entries[i][1].type === LineType.Empty) i--;
+        return entries[i][1];
     }
 
     parse(fileText: string): Diagnostic[] {
@@ -41,7 +44,7 @@ export class TASScript {
             if (this.tokens[this.lineIndex].length === 0) {
                 const previousLine = this.previousLine()!;
                 const keys = Array.from(this.lines.keys());
-                this.lines.set(keys[keys.length - 1] + 1, new ScriptLine("", previousLine?.tick || 0, false, LineType.Framebulk, previousLine?.activeTools || [], []));
+                this.lines.set(keys[keys.length - 1] + 1, new ScriptLine("", previousLine?.tick || 0, false, LineType.Empty, previousLine?.activeTools || [], []));
 
                 this.lineIndex++;
                 continue;
@@ -119,7 +122,7 @@ export class TASScript {
                 case ParserState.RngManip:
                     const token = this.next("Expected framebulks or rngmanip");
                     if (token === undefined) break;
-                    
+
                     if (token.type === TokenType.String && token.text === "rngmanip") {
                         this.expectText("Expected parameter");
                         this.expectCount("Ignored parameters", 2)
@@ -166,6 +169,7 @@ export class TASScript {
                     if (isRelative && isFirstFramebulk)
                         DiagnosticCollector.addDiagnostic(maybePlus.line, maybePlus.start, maybePlus.end, "First framebulk cannot be relative");
 
+                    const tickToken = this.currentToken();
                     const tick = this.expectNumber("Expected tick") || 0;
                     const angle_token = this.expectType("Expected '>' or '>>'", TokenType.RightAngle, TokenType.DoubleRightAngle);
 
@@ -175,6 +179,9 @@ export class TASScript {
 
                     var absoluteTick = isRelative ? this.previousLine()!.tick + tick : tick;
                     const previousLineTick = this.previousLine()!.tick;
+
+                    if (this.previousLine()!.type === LineType.Framebulk && absoluteTick <= previousLineTick)
+                        DiagnosticCollector.addDiagnostic(tickToken.line, tickToken.start, tickToken.end, `Expected tick greater than ${previousLineTick}`)
 
                     for (var i = 0; i < activeTools.length; i++) {
                         if (activeTools[i].ticksRemaining === undefined) continue;
@@ -215,7 +222,7 @@ export class TASScript {
                             this.tokenIndex++;
                             if (this.tokens[this.lineIndex].length <= this.tokenIndex) break blk;
                         }
-                        
+
                         // Tools field
                         this.parseToolsField(activeTools);
                         if (this.tokens[this.lineIndex].length > this.tokenIndex) {
@@ -550,7 +557,8 @@ export enum LineType {
     RngManip,
     RepeatStart,
     End,
-    Framebulk
+    Framebulk,
+    Empty,
 }
 
 export class ScriptLine {

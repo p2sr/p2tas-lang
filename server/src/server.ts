@@ -12,8 +12,6 @@ import { endCompletion, repeatCompletion, startCompletion, startTypes } from './
 import { LineType, ScriptLine, TASScript } from './tas-script/tasScript';
 import { TASTool } from './tas-script/tasTool';
 import { TokenType } from './tas-script/tokenizer';
-// import { TASTool } from './_tas-script/tasTool';
-// import { CompletionItemDeclaration, endCompletion, startCompletion, startTypes } from './_tas-script/util';
 
 const connection = createConnection(ProposedFeatures.all);
 const documents: Map<string, TASScript> = new Map();
