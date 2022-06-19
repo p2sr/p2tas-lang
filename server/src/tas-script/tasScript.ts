@@ -136,7 +136,7 @@ export class TASScript {
                     state = ParserState.Framebulks;
                     break;
                 case ParserState.Framebulks:
-                    const prevLine = this.previousLine()!;    
+                    const prevLine = this.previousLine()!;
 
                     if (this.isNextType(TokenType.String)) {
                         const token = this.tokens[this.lineIndex][this.tokenIndex - 1];
@@ -202,10 +202,6 @@ export class TASScript {
                         }
                     }
 
-                    // Sort tools according to their priority index from SAR if version >= 3
-                    if (this.scriptVersion >= 3)
-                        activeTools.sort((a, b) => TASTool.tools[a.tool].index - TASTool.tools[b.tool].index);
-
                     blk: {
                         if (!isToolBulk) {
                             // Movement field
@@ -239,6 +235,10 @@ export class TASScript {
                             DiagnosticCollector.addDiagnosticToLine(token.line, token.end, "Unexpected tokens");
                         }
                     }
+
+                    // Sort tools according to their priority index from SAR if version >= 3
+                    if (this.scriptVersion >= 3)
+                        activeTools.sort((a, b) => TASTool.tools[a.tool].index - TASTool.tools[b.tool].index);
 
                     this.lines.set(
                         currentLine,
