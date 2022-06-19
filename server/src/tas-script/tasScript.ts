@@ -136,34 +136,36 @@ export class TASScript {
                     state = ParserState.Framebulks;
                     break;
                 case ParserState.Framebulks:
+                    const prevLine = this.previousLine()!;    
+
                     if (this.isNextType(TokenType.String)) {
                         const token = this.tokens[this.lineIndex][this.tokenIndex - 1];
                         if (token.text === "repeat") {
-                            const tick = this.previousLine()!.tick;
+                            const tick = prevLine.tick;
                             const repeatCount = this.expectNumber("Expected repeat count");
 
                             if (repeatCount !== undefined)
                                 repeats.push([repeatCount, tick, this.lineIndex]);
-                            this.lines.set(currentLine, new ScriptLine(currentLineText, tick, false, LineType.RepeatStart, this.previousLine()!.activeTools, this.tokens[this.lineIndex]));
+                            this.lines.set(currentLine, new ScriptLine(currentLineText, tick, false, LineType.RepeatStart, prevLine.activeTools, this.tokens[this.lineIndex]));
                             break;
                         }
                         else if (token.text === "end") {
                             var endTick = 0;
                             if (repeats.length === 0) {
                                 DiagnosticCollector.addDiagnostic(token.line, token.start, token.end, "End outside of loop")
-                                endTick = this.previousLine()!.tick;
+                                endTick = prevLine.tick;
                             }
                             else {
                                 const [iterations, startingTick] = repeats.pop()!;
-                                const repeatEnd = this.previousLine()!.tick;
-                                endTick = this.previousLine()!.tick + (repeatEnd - startingTick) * (iterations - 1);
+                                const repeatEnd = prevLine.tick;
+                                endTick = prevLine.tick + (repeatEnd - startingTick) * (iterations - 1);
                             }
-                            this.lines.set(currentLine, new ScriptLine(currentLineText, endTick, false, LineType.End, this.previousLine()!.activeTools, this.tokens[this.lineIndex]));
+                            this.lines.set(currentLine, new ScriptLine(currentLineText, endTick, false, LineType.End, prevLine.activeTools, this.tokens[this.lineIndex]));
                             break;
                         }
                         else {
                             DiagnosticCollector.addDiagnostic(token.line, token.start, token.end, "Unexpected token");
-                            this.lines.set(currentLine, new ScriptLine(currentLineText, -1, false, LineType.Framebulk, this.previousLine()!.activeTools, this.tokens[this.lineIndex]));
+                            this.lines.set(currentLine, new ScriptLine(currentLineText, -1, false, LineType.Framebulk, prevLine.activeTools, this.tokens[this.lineIndex]));
                             break;
                         }
                     }
@@ -179,12 +181,12 @@ export class TASScript {
                     const angleToken = this.expectType("Expected '>' or '>>'", TokenType.RightAngle, TokenType.DoubleRightAngle);
                     const isToolBulk = angleToken !== undefined && angleToken.type === TokenType.DoubleRightAngle;
 
-                    var activeTools = this.previousLine()!.activeTools.map((val) => val.copy());
+                    var activeTools = prevLine.activeTools.map((val) => val.copy());
 
-                    var absoluteTick = isRelative ? this.previousLine()!.tick + tick : tick;
-                    const previousLineTick = this.previousLine()!.tick;
+                    var absoluteTick = isRelative ? prevLine.tick + tick : tick;
+                    const previousLineTick = prevLine.tick;
 
-                    if (this.previousLine()!.type === LineType.Framebulk && absoluteTick <= previousLineTick)
+                    if ((prevLine.type === LineType.Framebulk || prevLine.type === LineType.ToolBulk) && absoluteTick <= previousLineTick)
                         DiagnosticCollector.addDiagnostic(tickToken.line, tickToken.start, tickToken.end, `Expected tick greater than ${previousLineTick}`)
 
                     for (var i = 0; i < activeTools.length; i++) {
