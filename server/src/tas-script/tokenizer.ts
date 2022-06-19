@@ -146,7 +146,9 @@ namespace Tokenizer {
         return false;
     }
 
-    function anyOf(chars: string): (str: string) => boolean {
+    type Predicate = (str: string) => boolean;
+
+    function anyOf(chars: string): Predicate {
         return (str: string): boolean => chars.indexOf(str) !== -1;
     }
 

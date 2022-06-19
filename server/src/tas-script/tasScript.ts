@@ -67,25 +67,32 @@ export class TASScript {
                     this.expectText("Expected start", "start");
                     const startType = this.expectText("Expected start type", "map", "save", "cm", "now", "next");
 
-                    const checkStartTypeWithNumber = (startType: string, isNested: boolean): boolean => {
+                    const checkStartTypeArgument = (startType: string, isNested: boolean) => {
                         if (startType !== "map" && startType !== "save" && startType !== "cm") return false;
 
-                        if (!this.isNextType(TokenType.Number)) return false;
-
-                        const numberToken = this.tokens[this.lineIndex][this.tokenIndex - 1];
-                        const nextToken = this.currentToken();
-                        if (nextToken === undefined) return true;
-
-                        // Check for adjacency (e.g.: valid: 03test, invalid: 03 test)
-                        if (nextToken.start !== numberToken.end) {
-                            this.expectCount("Ignored parameters", 3 + (isNested ? 1 : 0));
-                            return false;
+                        var i = this.tokenIndex;
+                        var tokenCount = 2;
+                        var token1 = this.tokens[this.lineIndex][i];
+                        var token2 = this.tokens[this.lineIndex][i + 1];
+                        if (token1 === undefined && token2 === undefined) {
+                            this.expectText("Expected parameter");
+                            return;
                         }
 
-                        if (nextToken.type !== TokenType.String)
-                            DiagnosticCollector.addDiagnostic(nextToken.line, nextToken.start, nextToken.end, "Invalid token");
-                        this.expectCount("Ignored parameters", 4 + (isNested ? 1 : 0));
-                        return true;
+                        // Accept tokens until there are no more, or two tokens are not adjacent
+                        // E.g.: `1/2/3` - Parsed as separate tokens, but adjacent -> accepted
+                        //       `1/2 3` - First three tokens accepted (^), fourth not adjacent -> error on fourth
+                        while (true) {
+                            if (token2 === undefined) return;
+                            if (token1.end !== token2.start) {
+                                this.expectCount("Ignored parameters", tokenCount + 1 + (isNested ? 1 : 0));
+                            }
+
+                            i++;
+                            token1 = this.tokens[this.lineIndex][i];
+                            token2 = this.tokens[this.lineIndex][i + 1];
+                            tokenCount++;
+                        }
                     };
 
                     if (startType !== undefined) {
@@ -95,25 +102,15 @@ export class TASScript {
                             if (startType !== undefined) {
                                 if (startType === "now")
                                     this.expectCount("Ignored parameters", 3);
-                                else outer: {
-                                    const shouldReturn = checkStartTypeWithNumber(startType, true);
-                                    if (shouldReturn) break outer;
-
-                                    this.expectText("Expected parameter");
-                                    this.expectCount("Ignored parameters", 4);
-                                }
+                                else
+                                    checkStartTypeArgument(startType, true);
                             }
                         }
                         else {
                             if (startType === "now")
                                 this.expectCount("Ignored parameters", 2);
-                            else outer: {
-                                const shouldReturn = checkStartTypeWithNumber(startType, false);
-                                if (shouldReturn) break outer;
-
-                                this.expectText("Expected parameter");
-                                this.expectCount("Ignored parameters", 3);
-                            }
+                            else
+                                checkStartTypeArgument(startType, false);
                         }
                     }
 
