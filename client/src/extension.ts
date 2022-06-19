@@ -8,7 +8,7 @@ import {
     LanguageClientOptions,
     ServerOptions,
     TransportKind,
-    RequestType
+    Disposable
 } from 'vscode-languageclient/node';
 
 let client: LanguageClient;
@@ -27,7 +27,11 @@ var activeToolsDisplayDecoration: vscode.DecorationOptions & vscode.DecorationRe
         (vscode.window.activeTextEditor?.document?.lineAt(0)?.range?.end || new vscode.Position(0, 0)))
 }
 
+var onDidChangeTextEditorSelectionDisposable: Disposable;
+
 export function activate(context: vscode.ExtensionContext) {
+    var configuration = vscode.workspace.getConfiguration('p2tas-lang')
+
     // Language client
     let serverModule = context.asAbsolutePath(path.join('server', 'out', 'server.js'));
     let debugOptions = { execArgv: ['--nolazy', '--inspect=6009'] };
@@ -63,13 +67,16 @@ export function activate(context: vscode.ExtensionContext) {
 
     client.registerProposedFeatures();
 
-    // Draw the active tools display when the client is ready to have it pop up
-    client.onReady().then(() => drawActiveToolsDisplay(vscode.window.activeTextEditor!.selection.active, vscode.window.activeTextEditor!.document));
+    if (configuration.get<boolean>("showActiveToolsDisplay")) {
+        // Draw the active tools display when the client is ready to have it pop up
+        client.onReady().then(() => drawActiveToolsDisplay(vscode.window.activeTextEditor!.selection.active, vscode.window.activeTextEditor!.document));
+    }
 
     // Start the client. This will also launch the server
     client.start();
 
     server = new TASServer();
+    server.setConfirmFieldChanges(configuration.get<boolean>("confirmFieldChangesInSidebar"));
 
     vscode.commands.registerCommand("p2tas-lang.relativeFromAbsoluteTick", async () => {
         var editor = vscode.window.activeTextEditor;
@@ -143,14 +150,9 @@ export function activate(context: vscode.ExtensionContext) {
 
     context.subscriptions.push(codeActionProvider);
 
-
-    vscode.window.onDidChangeTextEditorSelection(event => {
-        const editor = vscode.window.activeTextEditor;
-        if (!editor) return;
-
-        const cursorPos = event.selections[0].active;
-        drawActiveToolsDisplay(cursorPos, editor.document);
-    });
+    if (configuration.get<boolean>("showActiveToolsDisplay")) {
+        onDidChangeTextEditorSelectionDisposable = registerActiveToolsDisplay();
+    }
 
     // --------------------------------------------------------------------------------------------------
     //                                             Sockets
@@ -195,6 +197,34 @@ export function activate(context: vscode.ExtensionContext) {
             sidebarProvider
         )
     );
+
+    context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(e => {
+        configuration = vscode.workspace.getConfiguration('p2tas-lang')
+
+        if (e.affectsConfiguration("p2tas-lang.showActiveToolsDisplay")) {
+            console.log(configuration.get("showActiveToolsDisplay"));
+            if (configuration.get<boolean>("showActiveToolsDisplay")) {
+                onDidChangeTextEditorSelectionDisposable = registerActiveToolsDisplay();
+            }
+            else {
+                onDidChangeTextEditorSelectionDisposable.dispose();
+            }
+        }
+
+        if (e.affectsConfiguration("p2tas-lang.confirmFieldChangesInSidebar")) {
+            server.setConfirmFieldChanges(configuration.get<boolean>("confirmFieldChangesInSidebar"));
+        }
+    }));
+}
+
+function registerActiveToolsDisplay(): Disposable {
+    return vscode.window.onDidChangeTextEditorSelection(event => {
+        const editor = vscode.window.activeTextEditor;
+        if (!editor) return;
+
+        const cursorPos = event.selections[0].active;
+        drawActiveToolsDisplay(cursorPos, editor.document);
+    });
 
 }
 

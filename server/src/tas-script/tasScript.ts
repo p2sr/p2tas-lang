@@ -8,6 +8,8 @@ enum ParserState {
 }
 
 export class TASScript {
+    fileText = "";
+
     lines = new Map<number, ScriptLine>();
 
     scriptVersion = 4;
@@ -25,15 +27,19 @@ export class TASScript {
         return entries[i][1];
     }
 
-    parse(fileText: string): Diagnostic[] {
+    parse(fileText?: string): Diagnostic[] {
         new DiagnosticCollector();
+
+        if (fileText !== undefined) {
+            this.fileText = fileText;
+        }
 
         this.lineIndex = 0;
         this.tokenIndex = 0;
         this.lines = new Map<number, ScriptLine>();
 
         var lines: string[] = [];
-        [this.tokens, lines] = tokenize(fileText);
+        [this.tokens, lines] = tokenize(this.fileText);
 
         var state = ParserState.Version;
         var isFirstFramebulk = true;

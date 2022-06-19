@@ -16,9 +16,11 @@ export class TASServer {
 
     connected = false;
 
+    userConfirmFieldChanges = true;
+
     // This data should only be updated from SAR data
     gameLocation: string | undefined;
-    activeTASses = ['','']; // Should always be of length 2
+    activeTASses = ['', '']; // Should always be of length 2
     playbackRate = 1.0;
     status = TASStatus.Inactive;
     currentTick = 0; // Only valid when active
@@ -40,12 +42,12 @@ export class TASServer {
         this.socket.on('close', () => {
             vscode.window.showInformationMessage("Closed connection to SAR.");
             this.connected = false;
-            if (this.webView !== undefined) 
+            if (this.webView !== undefined)
                 this.webView.updateWebView();
         });
         this.socket.on('data', (data) => {
             this.processData(data);
-            if (this.webView !== undefined) 
+            if (this.webView !== undefined)
                 this.webView.updateWebView();
         });
     }
@@ -64,18 +66,18 @@ export class TASServer {
         await document?.save();
 
         var filename = document?.fileName;
-        if(filename === undefined) return;
+        if (filename === undefined) return;
         this.requestPlayback(filename);
     }
     requestRawPlayback() {
         // No need to save for raw, the file should already be generated
         var filename = vscode.window.activeTextEditor?.document?.fileName;
-        if(filename === undefined) return;
+        if (filename === undefined) return;
 
         filename = filename.replace(".p2tas", "_raw.p2tas");
         this.requestPlayback(filename);
     }
-    requestPlayback(scriptPath : string) {
+    requestPlayback(scriptPath: string) {
         if (!this.checkSocket())
             return;
 
@@ -98,7 +100,7 @@ export class TASServer {
                 vscode.window.showErrorMessage("Failed to play: file is not in the `Portal 2/tas` directory.");
                 return;
             }
-            
+
             scriptPath = path.relative(tasFolder, scriptPath);
         }
 
@@ -110,12 +112,12 @@ export class TASServer {
         scriptPath = scriptPath.slice(0, scriptPath.length - 6); // remove extension
 
         vscode.window.showInformationMessage("Requesting playback for file " + scriptPath);
-    
+
         var buf = Buffer.alloc(9 + scriptPath.length, 0);
         buf.writeUInt32BE(scriptPath.length, 1);
         buf.write(scriptPath, 5);
         buf.writeUInt32BE(0, 5 + scriptPath.length);
-    
+
         this.socket.write(buf);
     }
     requestStopPlayback() {
@@ -218,11 +220,16 @@ export class TASServer {
                     this.gameLocation = fs.realpathSync(path.normalize(data.toString(undefined, 5, 5 + len)));
                     data = data.slice(5 + len);
                     break;
-            
+
                 default: // Bad packet ID, ignore 
                     break;
             }
         }
+    }
+
+    setConfirmFieldChanges(confirmFieldChanges: boolean) {
+        this.userConfirmFieldChanges = confirmFieldChanges;
+        this.webView?.updateWebView();
     }
 
     // ----------------------------------------------

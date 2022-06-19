@@ -31,6 +31,8 @@ const pauseatBox = document.querySelector("#pauseat-input");
 const linkButton = document.querySelector("#link");
 const linkIndicator = document.querySelector("#link-disabled");
 
+var confirmFieldChanges = true;
+
 // Runtime data
 let connected = false;
 let rawPlayback = false;
@@ -109,6 +111,11 @@ rateSlider.addEventListener('input', () => {
 rateSlider.addEventListener('mouseup', event => {
     if (event.button !== 0) return;
 
+    if (!confirmFieldChanges) {
+        changeRate();
+        return;
+    }
+
     // Then, set the visibility of the checkmark for the user to confirm the change
     if (rateBox.value !== playbackRate) { // Check if value has changed
         rateButton.classList.remove("unchanged"); // Show set button
@@ -120,6 +127,11 @@ rateSlider.addEventListener('mouseup', event => {
 });
 
 rateBox.addEventListener('keyup', key => {
+    if (!confirmFieldChanges) {
+        changeRate();
+        return;
+    }
+
     if (key.code === "Enter") changeRate();
 
     if (rateBox.value !== playbackRate) { // Check if value has changed
@@ -140,6 +152,11 @@ rateButton.addEventListener('keyup', key => {
 });
 
 skipBox.addEventListener('keyup', key => {
+    if (!confirmFieldChanges) {
+        fastForward();
+        return;
+    }
+
     if (key.code === "Enter") fastForward();
 
     if (skipBox.value !== skipToTick) { // Check if value has changed
@@ -160,6 +177,11 @@ skipButton.addEventListener('keyup', key => {
 });
 
 pauseatBox.addEventListener('keyup', key => {
+    if (!confirmFieldChanges) {
+        nextPause();
+        return;
+    }
+
     if (key.code === "Enter") nextPause();
 
     if (pauseatBox.value !== pauseAtTick) { // Check if value has changed
@@ -292,13 +314,15 @@ function handleMessage(message) {
         dataRateText.style.color = "var(--vscode-charts-lines)";
         dataTickText.style.color = "var(--vscode-charts-lines)";
     }
+
+    confirmFieldChanges = message.confirmFieldChanges;
 }
 
 function changeRate() {
     let rate = +rateBox.value;
     vscode.postMessage({ type: 'changeRate', rate: rate });
     playbackRate = rateBox.value;
-    unfocusButton(rateButton);
+    if (confirmFieldChanges) unfocusButton(rateButton);
 }
 
 function fastForward() {
@@ -312,14 +336,14 @@ function fastForward() {
         pauseatBox.value = skipBox.value;
     }
 
-    unfocusButton(skipButton);
+    if (confirmFieldChanges) unfocusButton(skipButton);
 }
 
 function nextPause() {
     let tick = +pauseatBox.value;
     vscode.postMessage({ type: 'nextPause', tick: tick });
     pauseAtTick = pauseatBox.value;
-    unfocusButton(pauseatButton);
+    if (confirmFieldChanges) unfocusButton(pauseatButton);
 }
 
 function setPlayImage(playing) {

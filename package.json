@@ -134,6 +134,26 @@
                     "contextualTitle": "TAS integration"
                 }
             ]
+        },
+        "configuration": {
+            "title": "P2-TAS Tools Language",
+            "properties": {
+                "p2tas-lang.showActiveToolsDisplay": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Show a piece of text at the end of the current line, showing the currently active tools in their execution order."
+                },
+                "p2tas-lang.confirmFieldChangesInSidebar": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Ask for confirmation when changing fields in the sidebar."
+                },
+                "p2tasLanguageServer.doErrorChecking": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Check the current file for errors."
+                }
+            }
         }
     },
     "activationEvents": [

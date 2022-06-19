@@ -7,6 +7,7 @@ import {
 	TextDocumentPositionParams,
 	TextDocumentSyncKind,
 	MarkupKind,
+	DidChangeConfigurationNotification,
 } from 'vscode-languageserver/node';
 import { endCompletion, repeatCompletion, startCompletion, startTypes, versionCompletion } from './tas-script/otherCompletion';
 import { LineType, ScriptLine, TASScript } from './tas-script/tasScript';
@@ -16,7 +17,13 @@ import { Token, TokenType } from './tas-script/tokenizer';
 const connection = createConnection(ProposedFeatures.all);
 const documents: Map<string, TASScript> = new Map();
 
+var hasConfigurationCapability = false;
+
 connection.onInitialize((params: InitializeParams) => {
+	const capabilities = params.capabilities;
+
+	hasConfigurationCapability = !!(capabilities.workspace && !!capabilities.workspace.configuration);
+
 	return {
 		capabilities: {
 			textDocumentSync: TextDocumentSyncKind.Full,
@@ -28,11 +35,45 @@ connection.onInitialize((params: InitializeParams) => {
 	};
 });
 
+connection.onInitialized(() => {
+	if (hasConfigurationCapability) {
+		connection.client.register(DidChangeConfigurationNotification.type, undefined);
+	}
+
+	pullSettings();
+});
+
+interface Settings {
+	doErrorChecking: boolean,
+}
+
+const defaultSettings: Settings = { doErrorChecking: true };
+var settings: Settings = defaultSettings;
+
+connection.onDidChangeConfiguration(_ => pullSettings());
+
+async function pullSettings() {
+	const configuration = await connection.workspace.getConfiguration({ section: "p2tasLanguageServer" });
+
+	settings = configuration as Settings;
+	if (!settings.doErrorChecking) {
+		// Remove all diagnostics
+		documents.forEach((doc, uri) => connection.sendDiagnostics({ uri, diagnostics: [] }));
+	}
+	else {
+		documents.forEach((doc, uri) => {
+			const diagnostics = doc.parse();
+			if (diagnostics)
+				connection.sendDiagnostics({ uri, diagnostics });
+		});
+	}
+}
+
 connection.onDidOpenTextDocument((params) => {
 	const tasScript = new TASScript();
 
 	const diagnostics = tasScript.parse(params.textDocument.text);
-	connection.sendDiagnostics({ uri: params.textDocument.uri, diagnostics });
+	if (settings.doErrorChecking) connection.sendDiagnostics({ uri: params.textDocument.uri, diagnostics });
 
 	documents.set(params.textDocument.uri, tasScript);
 });
@@ -40,7 +81,7 @@ connection.onDidOpenTextDocument((params) => {
 connection.onDidChangeTextDocument((params) => {
 	params.contentChanges.forEach((change) => {
 		const diagnostics = documents.get(params.textDocument.uri)?.parse(change.text);
-		if (diagnostics)
+		if (diagnostics && settings.doErrorChecking)
 			connection.sendDiagnostics({ uri: params.textDocument.uri, diagnostics });
 	});
 });

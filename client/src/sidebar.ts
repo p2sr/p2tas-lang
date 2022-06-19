@@ -67,7 +67,7 @@ export class TASSidebarProvider implements vscode.WebviewViewProvider {
             }
         });
 
-        this._view?.webview.postMessage({reset: 1});
+        this._view?.webview.postMessage({ reset: 1 });
     }
 
     private _getHtmlForWebview(webview: vscode.Webview) {
@@ -208,7 +208,8 @@ export class TASSidebarProvider implements vscode.WebviewViewProvider {
             connected: this.server.connected,
             state: TASStatus[this.server.status],
             rate: this.server.playbackRate,
-            currentTick: this.server.currentTick
+            currentTick: this.server.currentTick,
+            confirmFieldChanges: this.server.userConfirmFieldChanges,
         };
         this._view?.webview.postMessage(message);
     }
