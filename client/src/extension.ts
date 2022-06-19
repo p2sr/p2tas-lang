@@ -30,7 +30,7 @@ var activeToolsDisplayDecoration: vscode.DecorationOptions & vscode.DecorationRe
 var onDidChangeTextEditorSelectionDisposable: Disposable;
 
 export function activate(context: vscode.ExtensionContext) {
-    var configuration = vscode.workspace.getConfiguration('p2tas-lang')
+    var configuration = vscode.workspace.getConfiguration('p2tas-lang');
 
     // Language client
     let serverModule = context.asAbsolutePath(path.join('server', 'out', 'server.js'));
@@ -202,12 +202,12 @@ export function activate(context: vscode.ExtensionContext) {
         configuration = vscode.workspace.getConfiguration('p2tas-lang')
 
         if (e.affectsConfiguration("p2tas-lang.showActiveToolsDisplay")) {
-            console.log(configuration.get("showActiveToolsDisplay"));
             if (configuration.get<boolean>("showActiveToolsDisplay")) {
                 onDidChangeTextEditorSelectionDisposable = registerActiveToolsDisplay();
             }
             else {
-                onDidChangeTextEditorSelectionDisposable.dispose();
+                onDidChangeTextEditorSelectionDisposable?.dispose();
+                onDidChangeTextEditorSelectionDisposable = undefined;
             }
         }
 
@@ -225,7 +225,6 @@ function registerActiveToolsDisplay(): Disposable {
         const cursorPos = event.selections[0].active;
         drawActiveToolsDisplay(cursorPos, editor.document);
     });
-
 }
 
 async function drawActiveToolsDisplay(cursorPos: vscode.Position, document: vscode.TextDocument) {
