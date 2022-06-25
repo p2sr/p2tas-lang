@@ -369,7 +369,7 @@ connection.onRequest("p2tas/toggleLineTickType", (params: [any, number]) => {
 	const line = script.lines.get(lineNumber);
 	if (line === undefined) return "";
 
-	if (line.type !== LineType.Framebulk) return line.lineText;
+	if (line.type !== LineType.Framebulk && line.type != LineType.ToolBulk) return line.lineText;
 
 	if (!line.isRelative) {
 		// Switch from absolute to relative
