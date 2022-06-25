@@ -3,6 +3,24 @@
 Syntax highlighting, snippets and autocompletion for the Portal 2 TAS files.
 
 ## Release Notes
+### 1.3.0
+- Syntax changes:
+    - Add support for version 3 and 4
+    - Add support for tools-only bulk
+    - Add support for rngmanip line
+    - Add support for letspeedlock
+    - Add support for autoaim ent (david072)
+- Add settings (david072):
+    - Turning off language server diagnostics
+    - Confirm for input in the sidebar
+    - Hiding active tools
+- Other editor features (david072):
+    - Order active tools by processing order for version 3+
+    - Don't highlight tools in the commands field
+    - Code folding for repeat blocks
+    - Add completion for version
+- A heap of bug fixes (david072)
+
 ### 1.2.0
 - Sidebar improvements
     - Button to play raw TAS (Blenderiste09)
