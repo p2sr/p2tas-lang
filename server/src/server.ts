@@ -1,3 +1,4 @@
+import { TextDocument } from 'vscode-languageserver-textdocument';
 import {
 	createConnection,
 	ProposedFeatures,
@@ -8,6 +9,7 @@ import {
 	TextDocumentSyncKind,
 	MarkupKind,
 	DidChangeConfigurationNotification,
+	TextDocuments,
 } from 'vscode-languageserver/node';
 import { endCompletion, repeatCompletion, startCompletion, startTypes, versionCompletion } from './tas-script/otherCompletion';
 import { LineType, ScriptLine, TASScript } from './tas-script/tasScript';
@@ -15,6 +17,7 @@ import { TASTool } from './tas-script/tasTool';
 import { Token, TokenType } from './tas-script/tokenizer';
 
 const connection = createConnection(ProposedFeatures.all);
+const rawDocuments = new TextDocuments(TextDocument);
 const documents: Map<string, TASScript> = new Map();
 
 var hasConfigurationCapability = false;
@@ -26,7 +29,7 @@ connection.onInitialize((params: InitializeParams) => {
 
 	return {
 		capabilities: {
-			textDocumentSync: TextDocumentSyncKind.Full,
+			textDocumentSync: TextDocumentSyncKind.Incremental,
 			hoverProvider: true,
 			completionProvider: {
 				triggerCharacters: [" ", ";", "|", ">"]
@@ -69,24 +72,21 @@ async function pullSettings() {
 	}
 }
 
-connection.onDidOpenTextDocument((params) => {
+rawDocuments.onDidOpen((params) => {
 	const tasScript = new TASScript();
 
-	const diagnostics = tasScript.parse(params.textDocument.text);
-	if (settings.doErrorChecking) connection.sendDiagnostics({ uri: params.textDocument.uri, diagnostics });
+	const diagnostics = tasScript.parse(params.document.getText());
+	if (settings.doErrorChecking) connection.sendDiagnostics({ uri: params.document.uri, diagnostics });
 
-	documents.set(params.textDocument.uri, tasScript);
+	documents.set(params.document.uri, tasScript);
 });
 
-connection.onDidChangeTextDocument((params) => {
-	params.contentChanges.forEach((change) => {
-		const diagnostics = documents.get(params.textDocument.uri)?.parse(change.text);
-		if (diagnostics && settings.doErrorChecking)
-			connection.sendDiagnostics({ uri: params.textDocument.uri, diagnostics });
-	});
+rawDocuments.onDidChangeContent((params) => {
+	const diagnostics = documents.get(params.document.uri)?.parse(params.document.getText());
+	if (diagnostics && settings.doErrorChecking) connection.sendDiagnostics({ uri: params.document.uri, diagnostics });
 });
 
-connection.onDidCloseTextDocument((params) => { documents.delete(params.textDocument.uri); });
+rawDocuments.onDidClose((params) => { documents.delete(params.document.uri); });
 
 // FIXME: This needs to check if we are in a comment / skip comments on the way of finding the tool.
 //        One idea might be to break when we find a comment open token in "getToolAndArguments", 
@@ -395,6 +395,9 @@ connection.onRequest("p2tas/toggleLineTickType", (params: [any, number]) => {
 		return `${line.lineText.substring(0, line.tokens[0].start)}${line.lineText.substring(line.tokens[0].end, line.tokens[1].start)}${newTickSection}${line.lineText.substring(line.tokens[1].end).replace(/\r|\n/, "")}`;
 	}
 });
+
+// Make the text document manager listen on the connection for events
+rawDocuments.listen(connection);
 
 // Listen on the connection
 connection.listen();
