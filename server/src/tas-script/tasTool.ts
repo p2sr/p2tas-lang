@@ -85,7 +85,7 @@ export namespace TASTool {
         setang: {
             isOrderDetermined: true,
             hasOff: false,
-            durationIndex: 2,
+            durationIndex: 3,
             arguments: [
                 { type: TokenType.Number, required: true },
                 { type: TokenType.Number, required: true },
@@ -126,7 +126,7 @@ export namespace TASTool {
         check: {
             isOrderDetermined: true,
             hasOff: false,
-            durationIndex: -1,
+            durationIndex: 100, // janky hack to make this never show as an active tool
             arguments: [
                 {
                     text: "pos", type: TokenType.String, required: false, children: [
