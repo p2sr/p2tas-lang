@@ -143,6 +143,11 @@
                     "default": true,
                     "description": "Show a piece of text at the end of the current line, showing the currently active tools in their execution order."
                 },
+                "p2tas-lang.showDebugTick": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Highlight the framebulk corresponding to the current playback/trace tick, as well as the active tools on that tick, in the editor."
+                },
                 "p2tas-lang.confirmFieldChangesInSidebar": {
                     "type": "boolean",
                     "default": true,

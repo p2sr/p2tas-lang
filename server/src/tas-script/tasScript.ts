@@ -406,11 +406,23 @@ export class TASScript {
                     }
                 }
 
-                if (tool.durationIndex === -1)
-                    activeTools.push(new TASTool.Tool(toolName));
-                else {
-                    if (toolName === "autoaim" || toolDuration !== undefined)
-                        activeTools.push(new TASTool.Tool(toolName, toolDuration));
+                if (tool.durationIndex === -1) {
+                    activeTools.push(new TASTool.Tool(
+                        toolName,
+                        this.lineIndex,
+                        toolNameToken.start,
+                        this.tokens[this.lineIndex][this.tokenIndex - 1].end,
+                    ));
+                } else {
+                    if (toolName === "autoaim" || toolDuration !== undefined) {
+                        activeTools.push(new TASTool.Tool(
+                            toolName,
+                            this.lineIndex,
+                            toolNameToken.start,
+                            this.tokens[this.lineIndex][this.tokenIndex - 1].end,
+                            toolDuration,
+                        ));
+                    }
                 }
 
                 if (this.tokenIndex >= this.tokens[this.lineIndex].length) return;
@@ -453,7 +465,13 @@ export class TASScript {
                 }
                 this.tokenIndex++;
 
-                activeTools.push(new TASTool.Tool(toolName !== "decel" ? toolName : "(decel)", toolDuration));
+                activeTools.push(new TASTool.Tool(
+                    toolName !== "decel" ? toolName : "(decel)",
+                    this.lineIndex,
+                    toolNameToken.start,
+                    this.tokens[this.lineIndex][this.tokenIndex - 2].end,
+                    toolDuration,
+                ));
             }
         }
     }

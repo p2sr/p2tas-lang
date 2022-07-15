@@ -4,11 +4,14 @@ export namespace TASTool {
     export class Tool {
         constructor(
             public tool: string,
-            public ticksRemaining?: number
+            public fromLine: number,
+            public startCol: number,
+            public endCol: number,
+            public ticksRemaining?: number,
         ) { }
 
         copy(): Tool {
-            return new Tool(this.tool, this.ticksRemaining);
+            return new Tool(this.tool, this.fromLine, this.startCol, this.endCol, this.ticksRemaining);
         }
     }
 

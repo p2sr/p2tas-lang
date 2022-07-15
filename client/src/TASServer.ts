@@ -18,12 +18,17 @@ export class TASServer {
 
     userConfirmFieldChanges = true;
 
+    // Some callbacks set by the root extension code to handle debug highlight
+    onRequestPlayback: ((doc: vscode.TextDocument) => void) | null = null;
+    onDataUpdate: (() => void) | null = null;
+
     // This data should only be updated from SAR data
     gameLocation: string | undefined;
     activeTASses = ['', '']; // Should always be of length 2
     playbackRate = 1.0;
     status = TASStatus.Inactive;
     currentTick = 0; // Only valid when active
+    debugTick = -1;
 
     webView: TASSidebarProvider | undefined;
 
@@ -44,11 +49,13 @@ export class TASServer {
             this.connected = false;
             if (this.webView !== undefined)
                 this.webView.updateWebView();
+            if (this.onDataUpdate) this.onDataUpdate();
         });
         this.socket.on('data', (data) => {
             this.processData(data);
             if (this.webView !== undefined)
                 this.webView.updateWebView();
+            if (this.onDataUpdate) this.onDataUpdate();
         });
     }
 
@@ -67,12 +74,17 @@ export class TASServer {
 
         var filename = document?.fileName;
         if (filename === undefined) return;
+
+        if (this.onRequestPlayback !== null) this.onRequestPlayback(vscode.window.activeTextEditor?.document);
+
         this.requestPlayback(filename);
     }
     requestRawPlayback() {
         // No need to save for raw, the file should already be generated
         var filename = vscode.window.activeTextEditor?.document?.fileName;
         if (filename === undefined) return;
+
+        if (this.onRequestPlayback !== null) this.onRequestPlayback(vscode.window.activeTextEditor?.document);
 
         filename = filename.replace(".p2tas", "_raw.p2tas");
         this.requestPlayback(filename);
@@ -212,6 +224,11 @@ export class TASServer {
 
                 case 6: // update current tick
                     this.currentTick = data.readUInt32BE(1);
+                    data = data.slice(5);
+                    break;
+
+                case 7: // update debug tick
+                    this.debugTick = data.readInt32BE(1);
                     data = data.slice(5);
                     break;
 

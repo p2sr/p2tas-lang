@@ -27,7 +27,18 @@ var activeToolsDisplayDecoration: vscode.DecorationOptions & vscode.DecorationRe
         (vscode.window.activeTextEditor?.document?.lineAt(0)?.range?.end || new vscode.Position(0, 0)))
 }
 
+const debugBulkDecorationType = vscode.window.createTextEditorDecorationType({
+    backgroundColor: new vscode.ThemeColor("editor.wordHighlightBackground"),
+});
+
+const debugActiveToolDecorationType = vscode.window.createTextEditorDecorationType({
+    backgroundColor: new vscode.ThemeColor("editor.wordHighlightStrongBackground"),
+});
+
 var onDidChangeTextEditorSelectionDisposable: Disposable;
+
+let lastPlayedScriptDocument: vscode.TextDocument | null = null;
+let scriptStateDirtyForDebug = true; // has the script been saved in a dirty state since it was played?
 
 export function activate(context: vscode.ExtensionContext) {
     var configuration = vscode.workspace.getConfiguration('p2tas-lang');
@@ -77,6 +88,14 @@ export function activate(context: vscode.ExtensionContext) {
 
     server = new TASServer();
     server.setConfirmFieldChanges(configuration.get<boolean>("confirmFieldChangesInSidebar"));
+    server.onRequestPlayback = (document: vscode.TextDocument) => {
+        lastPlayedScriptDocument = document;
+        scriptStateDirtyForDebug = false;
+        updateDebugTickHighlight();
+    };
+    server.onDataUpdate = () => {
+        updateDebugTickHighlight();
+    };
 
     vscode.commands.registerCommand("p2tas-lang.relativeFromAbsoluteTick", async () => {
         var editor = vscode.window.activeTextEditor;
@@ -199,7 +218,7 @@ export function activate(context: vscode.ExtensionContext) {
     );
 
     context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(e => {
-        configuration = vscode.workspace.getConfiguration('p2tas-lang')
+        configuration = vscode.workspace.getConfiguration('p2tas-lang');
 
         if (e.affectsConfiguration("p2tas-lang.showActiveToolsDisplay")) {
             if (configuration.get<boolean>("showActiveToolsDisplay")) {
@@ -211,8 +230,33 @@ export function activate(context: vscode.ExtensionContext) {
             }
         }
 
+        if (e.affectsConfiguration("p2tas-lang.showDebugTick")) {
+            updateDebugTickHighlight();
+        }
+
         if (e.affectsConfiguration("p2tas-lang.confirmFieldChangesInSidebar")) {
             server.setConfirmFieldChanges(configuration.get<boolean>("confirmFieldChangesInSidebar"));
+        }
+    }));
+
+    context.subscriptions.push(vscode.workspace.onWillSaveTextDocument(event => {
+        if (event.document.isDirty && lastPlayedScriptDocument?.uri?.toString() === event.document.uri.toString()) {
+            scriptStateDirtyForDebug = true;
+            updateDebugTickHighlight();
+        }
+    }));
+
+    context.subscriptions.push(vscode.workspace.onDidChangeTextDocument(event => {
+        if (lastPlayedScriptDocument?.uri?.toString() === event.document.uri.toString()) {
+            updateDebugTickHighlight();
+        }
+    }));
+
+    context.subscriptions.push(vscode.window.onDidChangeActiveTextEditor(event => {
+        // In the case that the text editor wasn't visible when a change to showDebugTick occurred, the decorations
+        // won't yet have been modified, so we need to trigger an update to the highlight now
+        if (lastPlayedScriptDocument?.uri?.toString() === event.document.uri.toString()) {
+            updateDebugTickHighlight();
         }
     }));
 }
@@ -227,17 +271,89 @@ function registerActiveToolsDisplay(): Disposable {
     });
 }
 
+class ActiveTool {
+    constructor(
+        public tool: string,
+        public fromLine: number,
+        public startCol: number,
+        public endCol: number,
+        public ticksRemaining?: number,
+    ) { }
+}
+
+function parseActiveTools(str: string): ActiveTool[] {
+    let tools = new Array<ActiveTool>();
+
+    for (const toolPart of str.split(",")) {
+        const parts = toolPart.split("/");
+        const toolName = parts[0];
+        const toolLine = parseInt(parts[1], 10);
+        const toolStart = parseInt(parts[2], 10);
+        const toolEnd = parseInt(parts[3], 10);
+        const toolTicks = parts.length > 4 ? parseInt(parts[4], 10) : null;
+        tools.push(new ActiveTool(toolName, toolLine, toolStart, toolEnd, toolTicks));
+    }
+
+    return tools;
+}
+
 async function drawActiveToolsDisplay(cursorPos: vscode.Position, document: vscode.TextDocument) {
-    const tools: string = await client.sendRequest("p2tas/activeTools", [document.uri, cursorPos.line]);
+    const toolsStr: string = await client.sendRequest("p2tas/activeTools", [document.uri, cursorPos.line]);
+    const tools = parseActiveTools(toolsStr);
+
+    const toolsText = tools.map(tool => {
+        if (tool.ticksRemaining) return `${tool.tool} (${tool.ticksRemaining} ticks remaining)`;
+        else return tool.tool;
+    }).join(", ");
+
     activeToolsDisplayDecoration = {
         range: new vscode.Range(cursorPos, document.lineAt(cursorPos.line).range.end),
         renderOptions: {
             after: {
-                contentText: tools.length > 0 ? `Active tools: ${tools}` : "",
+                contentText: tools.length > 0 ? `Active tools: ${toolsText}` : "",
                 textDecoration: ";font-size:11px",
                 fontWeight: ";font-weight:lighter"
             }
         }
     };
     vscode.window.activeTextEditor!.setDecorations(activeToolsDisplayDecorationType, [activeToolsDisplayDecoration]);
+}
+
+async function updateDebugTickHighlight() {
+    const enabled = vscode.workspace.getConfiguration('p2tas-lang').get<boolean>("showDebugTick");
+    const document = lastPlayedScriptDocument;
+    const curTick = server.debugTick;
+
+    if (!enabled ||
+        document === null ||
+        scriptStateDirtyForDebug ||
+        document.isDirty ||
+        !server.connected ||
+        curTick < 0 ||
+        !vscode.window.activeTextEditor ||
+        document.uri?.toString() != vscode.window.activeTextEditor!.document.uri.toString()
+    ) {
+        // remove active decorations
+        for (const editor of vscode.window.visibleTextEditors) {
+            editor.setDecorations(debugBulkDecorationType, []);
+            editor.setDecorations(debugActiveToolDecorationType, []);
+        }
+        return;
+    }
+
+    const line: number = await client.sendRequest("p2tas/tickLine", [document.uri, curTick]);
+    const lineTick: number = await client.sendRequest("p2tas/lineTick", [document.uri, line]);
+
+    const toolsStr: string = await client.sendRequest("p2tas/activeTools", [document.uri, line]);
+    const tools = parseActiveTools(toolsStr).filter(tool => tool.ticksRemaining === null || tool.ticksRemaining + lineTick > curTick);
+
+    const debugBulkDecoration = {
+        range: document.lineAt(line).range,
+    };
+    vscode.window.activeTextEditor!.setDecorations(debugBulkDecorationType, [debugBulkDecoration]);
+
+    const debugActiveToolDecorations = tools.map(tool => ({
+        range: new vscode.Range(tool.fromLine, tool.startCol, tool.fromLine, tool.endCol),
+    }));
+    vscode.window.activeTextEditor!.setDecorations(debugActiveToolDecorationType, debugActiveToolDecorations);
 }

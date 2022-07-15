@@ -349,7 +349,9 @@ connection.onRequest("p2tas/activeTools", (params: [any, number]) => {
 	const line = script.lines.get(lineNumber);
 	if (line === undefined) return "";
 
-	return line.activeTools.map((tool) => `${tool.tool}${tool.ticksRemaining ? ` (${tool.ticksRemaining} ticks remaining)` : ""}`).join(", ");
+	return line.activeTools.map(tool =>
+		`${tool.tool}/${tool.fromLine}/${tool.startCol}/${tool.endCol}` + (tool.ticksRemaining ? `/${tool.ticksRemaining}` : "")
+	).join(","); // e.g. 'autoaim/0,setang/1/5'
 });
 
 connection.onRequest("p2tas/lineTick", (params: [any, number]) => {
@@ -359,6 +361,23 @@ connection.onRequest("p2tas/lineTick", (params: [any, number]) => {
 	if (script === undefined) return "";
 
 	return script.lines.get(lineNumber)?.tick || "";
+});
+
+connection.onRequest("p2tas/tickLine", (params: [any, number]) => {
+	const [uri, tick] = params;
+
+	const script = documents.get(uri.external);
+	if (script === undefined) return "";
+
+	let lastLine: number = -1;
+	script.lines.forEach((line, num) => {
+		if (num <= lastLine) return;
+		if (line.type !== LineType.Framebulk && line.type !== LineType.ToolBulk) return;
+		if (line.tick > tick) return;
+		lastLine = num;
+	})
+
+	return lastLine == -1 ? "" : lastLine;
 });
 
 connection.onRequest("p2tas/toggleLineTickType", (params: [any, number]) => {
