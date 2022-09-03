@@ -23,7 +23,7 @@ export const startTypes: CompletionDefinition = {
 };
 
 type CompletionItem = { name: string, description: string };
-export const versionCompletion: CompletionItem = { name: "version", description: "**Syntax:** ```version <1/2/3/4>```\n\nDefines the version to use. This must be the first statement in a script. The number lets the TAS tools know which version to use, to allow for backwards compatibility with older scripts." }
+export const versionCompletion: CompletionItem = { name: "version", description: "**Syntax:** ```version <number>```\n\nDefines the version to use. This must be the first statement in a script. The number lets the TAS tools know which version to use, to allow for backwards compatibility with older scripts." }
 export const startCompletion: CompletionItem = { name: "start", description: "**Syntax:** ```start <map|save|cm|now|next>```\n\nDefines how the TAS should start. Must be the second statement in a script, preceeded by a `version` statement." };
 export const repeatCompletion: CompletionItem = { name: "repeat", description: "**Syntax:** ```repeat <iterations>```\n\nMarks the start of a repeat block with given iterations. Must have a corresponding ```end``` statement later down in the file." };
 export const endCompletion: CompletionItem = { name: "end", description: "**Syntax:** ```end```\n\nMarks the end of a loop. Must have a corresponding ```repeat``` further up in the file." };
