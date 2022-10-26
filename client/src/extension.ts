@@ -282,6 +282,8 @@ class ActiveTool {
 }
 
 function parseActiveTools(str: string): ActiveTool[] {
+    if (str.length === 0) return [];
+
     let tools = new Array<ActiveTool>();
 
     for (const toolPart of str.split(",")) {
