@@ -3,6 +3,11 @@
 Syntax highlighting, snippets and autocompletion for the Portal 2 TAS files.
 
 ## Release Notes
+### 1.4.1
+- Add support for version 6
+- Fix various bugs relating to scripts starting with comments/empty lines
+- Fix active tools display that was still displaying when empty
+
 ### 1.4.0
 - New features:
     - Debug tick highlight (mlugg)
