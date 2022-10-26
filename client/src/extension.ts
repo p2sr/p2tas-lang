@@ -143,7 +143,7 @@ export function activate(context: vscode.ExtensionContext) {
         const oldLineText = editor!.document.lineAt(line).text;
 
         const newLineText: string = await client.sendRequest("p2tas/toggleLineTickType", [editor!.document.uri, line]);
-        if (newLineText === oldLineText) return;
+        if (newLineText === "" || newLineText === oldLineText) return;
 
         editor.edit(editBuilder => {
             editBuilder.replace(new vscode.Range(new vscode.Position(line, 0), new vscode.Position(line, oldLineText.length)), newLineText);

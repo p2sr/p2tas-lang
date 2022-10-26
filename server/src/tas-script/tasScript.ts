@@ -23,7 +23,6 @@ export class TASScript {
         if (entries.length === 0) return undefined;
 
         var i = entries.length - 1;
-        while (entries[i][1].type === LineType.Empty) i--;
         return entries[i][1];
     }
 
@@ -49,10 +48,6 @@ export class TASScript {
 
         while (this.lineIndex < this.tokens.length) {
             if (this.tokens[this.lineIndex].length === 0) {
-                const previousLine = this.previousLine()!;
-                const keys = Array.from(this.lines.keys());
-                this.lines.set(keys[keys.length - 1] + 1, new ScriptLine("", previousLine?.tick || 0, false, LineType.Empty, previousLine?.activeTools || [], []));
-
                 this.lineIndex++;
                 continue;
             }
@@ -611,7 +606,6 @@ export enum LineType {
     End,
     Framebulk,
     ToolBulk,
-    Empty,
 }
 
 export class ScriptLine {

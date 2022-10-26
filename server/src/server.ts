@@ -96,7 +96,7 @@ connection.onCompletion((params: TextDocumentPositionParams): CompletionItem[] =
 	if (script === undefined) return [];
 	const line = script.lines.get(params.position.line);
 
-	if (line === undefined || line.type === LineType.Empty) {
+	if (line === undefined) {
 		return [versionCompletion, startCompletion, repeatCompletion, endCompletion].map((val) => {
 			return {
 				label: val.name,
