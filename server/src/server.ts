@@ -392,10 +392,19 @@ connection.onRequest("p2tas/toggleLineTickType", (params: [any, number]) => {
 
 	if (!line.isRelative) {
 		// Switch from absolute to relative
-		let previousLine: ScriptLine | undefined = script.lines.get(lineNumber - 1);
+		let previousLine: ScriptLine | undefined = undefined;
+		let prevLineNumber = lineNumber;
+
+		while (previousLine === undefined) {
+			prevLineNumber--;
+			
+			if (prevLineNumber < 0) return line.lineText;
+
+			previousLine = script.lines.get(prevLineNumber)
+		}
 
 		// If there is no previous line, then the requested line was the first line in the file
-		if (previousLine === undefined || (previousLine!.type === LineType.Start || previousLine!.type === LineType.Version)) return line.lineText;
+		if ((previousLine!.type === LineType.Start || previousLine!.type === LineType.Version)) return line.lineText;
 
 		// Invalid line format
 		if (line.tokens[0].type !== TokenType.Number) return line.lineText;

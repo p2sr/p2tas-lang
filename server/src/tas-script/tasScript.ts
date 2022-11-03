@@ -10,6 +10,7 @@ enum ParserState {
 export class TASScript {
     fileText = "";
 
+    // Map of line# -> ScriptLine
     lines = new Map<number, ScriptLine>();
 
     scriptVersion = 4;
