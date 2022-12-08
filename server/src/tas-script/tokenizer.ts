@@ -154,7 +154,7 @@ namespace Tokenizer {
 
     const whitespacePredicate = anyOf(" \n\r\t");
     const numberPredicate = anyOf("-0123456789");
-    const letterPredicate = anyOf("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_-0123456789:().\"\'=@");
+    const letterPredicate = anyOf("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_-0123456789:().\"\'=@[]");
 
     function nextTokenType(): TokenType {
         // Skip whitespace
