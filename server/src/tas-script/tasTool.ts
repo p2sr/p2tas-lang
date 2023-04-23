@@ -90,8 +90,9 @@ export namespace TASTool {
                 { type: TokenType.Number, required: true },
                 { type: TokenType.Number, required: true },
                 { type: TokenType.Number, required: false },
+                { type: TokenType.String, required: false, description: "Easing type for the setang among: `cubic`, `exp`/`exponential`, `linear` or `sin`/`sine`" },
             ],
-            description: "**Syntax:** ```setang <pitch> <yaw> [time]```\n\nThis tool works basically the same as setang console command. It will adjust the view analog in a way so the camera is looking towards given angles.\n\n**Example:** ```setang 0 0 20```",
+            description: "**Syntax:** ```setang <pitch> <yaw> [time] [easing]```\n\nThis tool works basically the same as setang console command. It will adjust the view analog in a way so the camera is looking towards given angles.\n\n**Example:** ```setang 0 0 20```",
             index: 1,
         },
         autoaim: {
@@ -110,7 +111,7 @@ export namespace TASTool {
                 },
                 { type: TokenType.Number, required: false },
             ],
-            description: "**Syntax:** ```autoaim <x> <y> <z> [time]```\n\nThe Auto Aim tool will automatically aim towards a specified point in 3D space.\n\n**Example:** ```autoaim 0 0 0 20```",
+            description: "**Syntax:** ```autoaim [ent] <x> <y> <z> [time]```\n\nThe Auto Aim tool will automatically aim towards a specified point in 3D space.\n\n**Example:** ```autoaim 0 0 0 20```",
             index: 2,
         },
         decel: {
