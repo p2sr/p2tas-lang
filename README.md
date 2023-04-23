@@ -3,6 +3,11 @@
 Syntax highlighting, snippets and autocompletion for the Portal 2 TAS files.
 
 ## Release Notes
+### 1.4.2
+- Add support for version 7
+- Add support for setang easing types
+- Fix toggle tick with empty lines before
+
 ### 1.4.1
 - Add support for version 6
 - Fix various bugs relating to scripts starting with comments/empty lines
