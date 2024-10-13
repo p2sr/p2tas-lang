@@ -1,5 +1,7 @@
 # Portal 2 TAS Tools
 
+[![CI](https://github.com/p2sr/p2tas-lang/workflows/CI/badge.svg)](https://github.com/p2sr/p2tas-lang/actions?query=workflow%3ACI+branch%3Amaster)
+
 Syntax highlighting, snippets and autocompletion for the Portal 2 TAS files, using the [SourceAutoRecord](https://github.com/p2sr/SourceAutoRecord) plugin.
 
 ## Installation

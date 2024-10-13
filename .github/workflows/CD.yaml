@@ -1,0 +1,28 @@
+name: CD
+
+on:
+  push:
+    tags: '*'
+
+jobs:
+    release:
+        name: Release
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+
+            - name: Install Dependencies
+              run: npm install
+
+            - name: Install VSCE
+              run: npm install -g @vscode/vsce
+            
+            - name: Publish
+              env:
+                MARKETPLACE_ACCESS_TOKEN: ${{ secrets.MARKETPLACE_ACCESS_TOKEN }}
+              run: vsce publish --skip-license -p $MARKETPLACE_ACCESS_TOKEN
