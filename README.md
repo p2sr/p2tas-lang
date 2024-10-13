@@ -6,7 +6,7 @@ Syntax highlighting, snippets and autocompletion for the Portal 2 TAS files, usi
 
 ## Installation
 
-1. [Open in VS Code](vscode:extension/Portal2SpeedrunningHub.p2tas) ([Marketplace](https://marketplace.visualstudio.com/items?itemName=Portal2SpeedrunningHub.p2tas))
+1. Go to the [Marketplace](https://marketplace.visualstudio.com/items?itemName=Portal2SpeedrunningHub.p2tas) or search for "Portal 2 TAS Tools" in the extensions tab in Visual Studio Code
 2. Press "Install"
 
 ## Release Notes
