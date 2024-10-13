@@ -80,7 +80,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     if (configuration.get<boolean>("showActiveToolsDisplay")) {
         // Draw the active tools display when the client is ready to have it pop up
-        client.onReady().then(() => drawActiveToolsDisplay(vscode.window.activeTextEditor!.selection.active, vscode.window.activeTextEditor!.document));
+        client.onReady().then(() => drawActiveToolsDisplay(vscode.window.activeTextEditor?.selection.active, vscode.window.activeTextEditor?.document));
     }
 
     // Start the client. This will also launch the server
@@ -300,6 +300,7 @@ function parseActiveTools(str: string): ActiveTool[] {
 }
 
 async function drawActiveToolsDisplay(cursorPos: vscode.Position, document: vscode.TextDocument) {
+    if (!cursorPos || !document) return;
     const toolsStr: string = await client.sendRequest("p2tas/activeTools", [document.uri, cursorPos.line]);
     const tools = parseActiveTools(toolsStr);
 
