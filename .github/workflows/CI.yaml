@@ -28,7 +28,7 @@ jobs:
               run: npm install -g @vscode/vsce
             
             - name: Build
-              run: vsce package -o p2tas.vsix --skip-license
+              run: vsce package -o p2tas.vsix
             
             - name: Upload Artifact
               uses: actions/upload-artifact@v4

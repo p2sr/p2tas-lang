@@ -25,4 +25,4 @@ jobs:
             - name: Publish
               env:
                 MARKETPLACE_ACCESS_TOKEN: ${{ secrets.MARKETPLACE_ACCESS_TOKEN }}
-              run: vsce publish --skip-license -p $MARKETPLACE_ACCESS_TOKEN
+              run: vsce publish -p $MARKETPLACE_ACCESS_TOKEN
