@@ -1,13 +1,13 @@
 {
-    "name": "p2tas-lang",
-    "displayName": "Portal 2 TAS tools Lang",
+    "name": "p2tas",
+    "displayName": "Portal 2 TAS Tools",
     "description": "Syntax highlighting, snippets, autocompletion for the Portal 2 TASing script language",
     "version": "1.4.2",
-    "publisher": "RainbowwPhoenixx",
+    "publisher": "Portal2SpeedrunningHub",
     "icon": "images/logo128.png",
     "repository": {
         "type": "git",
-        "url": "https://github.com/RainbowwPhoenixx/p2tas-lang"
+        "url": "https://github.com/p2sr/p2tas-lang"
     },
     "engines": {
         "vscode": "^1.56.0"
@@ -45,57 +45,57 @@
         ],
         "commands": [
             {
-                "command": "p2tas-lang.relativeFromAbsoluteTick",
+                "command": "p2tas.relativeFromAbsoluteTick",
                 "title": "Relative tick from absolute tick",
                 "category": "p2tas"
             },
             {
-                "command": "p2tas-lang.toggleLineTickType",
+                "command": "p2tas.toggleLineTickType",
                 "title": "Toggle line tick type",
                 "category": "p2tas"
             },
             {
-                "command": "p2tas-lang.connectSAR",
+                "command": "p2tas.connectSAR",
                 "title": "Connect to SAR through the TCP socket",
                 "category": "p2tas"
             },
             {
-                "command": "p2tas-lang.playTAS",
+                "command": "p2tas.playTAS",
                 "title": "Play the current open TAS.",
                 "category": "p2tas"
             },
             {
-                "command": "p2tas-lang.stopTAS",
+                "command": "p2tas.stopTAS",
                 "title": "Stop the current playing TAS.",
                 "category": "p2tas"
             },
             {
-                "command": "p2tas-lang.changeRate",
+                "command": "p2tas.changeRate",
                 "title": "Change TAS playback rate.",
                 "category": "p2tas"
             },
             {
-                "command": "p2tas-lang.resumeTAS",
+                "command": "p2tas.resumeTAS",
                 "title": "Resume the currently playing TAS",
                 "category": "p2tas"
             },
             {
-                "command": "p2tas-lang.pauseTAS",
+                "command": "p2tas.pauseTAS",
                 "title": "Pause the current TAS.",
                 "category": "p2tas"
             },
             {
-                "command": "p2tas-lang.fastForward",
+                "command": "p2tas.fastForward",
                 "title": "Fast forward TAS.",
                 "category": "p2tas"
             },
             {
-                "command": "p2tas-lang.setNextPauseTick",
+                "command": "p2tas.setNextPauseTick",
                 "title": "Pause TAS at tick.",
                 "category": "p2tas"
             },
             {
-                "command": "p2tas-lang.advanceTick",
+                "command": "p2tas.advanceTick",
                 "title": "Tick advance current TAS.",
                 "category": "p2tas"
             }
@@ -103,14 +103,14 @@
         "menus": {
             "commandPalette": [
                 {
-                    "command": "p2tas-lang.relativeFromAbsoluteTick",
+                    "command": "p2tas.relativeFromAbsoluteTick",
                     "when": "editorLangId == p2tas"
                 }
             ]
         },
         "keybindings": [
             {
-                "command": "p2tas-lang.relativeFromAbsoluteTick",
+                "command": "p2tas.relativeFromAbsoluteTick",
                 "key": "ctrl+shift+t",
                 "mac": "cmd+shift+t"
             }
@@ -138,17 +138,17 @@
         "configuration": {
             "title": "P2-TAS Tools Language",
             "properties": {
-                "p2tas-lang.showActiveToolsDisplay": {
+                "p2tas.showActiveToolsDisplay": {
                     "type": "boolean",
                     "default": true,
                     "description": "Show a piece of text at the end of the current line, showing the currently active tools in their execution order."
                 },
-                "p2tas-lang.showDebugTick": {
+                "p2tas.showDebugTick": {
                     "type": "boolean",
                     "default": true,
                     "description": "Highlight the framebulk corresponding to the current playback/trace tick, as well as the active tools on that tick, in the editor."
                 },
-                "p2tas-lang.confirmFieldChangesInSidebar": {
+                "p2tas.confirmFieldChangesInSidebar": {
                     "type": "boolean",
                     "default": true,
                     "description": "Ask for confirmation when changing fields in the sidebar."
@@ -164,7 +164,7 @@
     "activationEvents": [
         "onView:p2tas-sidebar",
         "onLanguage:p2tas",
-        "onCommand:p2tas-lang.relativeFromAbsoluteTick"
+        "onCommand:p2tas.relativeFromAbsoluteTick"
     ],
     "main": "./client/out/extension.js",
     "scripts": {

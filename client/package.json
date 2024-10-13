@@ -3,10 +3,10 @@
 	"description": "The p2tas extension.",
 	"author": "RainbowwPhoenixx",
 	"version": "0.5.3",
-	"publisher": "RainbowwPhoenixx",
+	"publisher": "Portal2SpeedrunningHub",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/RainbowwPhoenixx/p2tas-lang"
+		"url": "https://github.com/p2sr/p2tas-lang"
 	},
 	"engines": {
 		"vscode": "^1.52.0"

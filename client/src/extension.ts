@@ -41,7 +41,7 @@ let lastPlayedScriptDocument: vscode.TextDocument | null = null;
 let scriptStateDirtyForDebug = true; // has the script been saved in a dirty state since it was played?
 
 export function activate(context: vscode.ExtensionContext) {
-    var configuration = vscode.workspace.getConfiguration('p2tas-lang');
+    var configuration = vscode.workspace.getConfiguration('p2tas');
 
     // Language client
     let serverModule = context.asAbsolutePath(path.join('server', 'out', 'server.js'));
@@ -97,7 +97,7 @@ export function activate(context: vscode.ExtensionContext) {
         updateDebugTickHighlight();
     };
 
-    vscode.commands.registerCommand("p2tas-lang.relativeFromAbsoluteTick", async () => {
+    vscode.commands.registerCommand("p2tas.relativeFromAbsoluteTick", async () => {
         var editor = vscode.window.activeTextEditor;
         if (!editor) {
             vscode.window.showErrorMessage("No currently active editor");
@@ -132,7 +132,7 @@ export function activate(context: vscode.ExtensionContext) {
         });
     });
 
-    vscode.commands.registerCommand("p2tas-lang.toggleLineTickType", async () => {
+    vscode.commands.registerCommand("p2tas.toggleLineTickType", async () => {
         var editor = vscode.window.activeTextEditor;
         if (!editor) {
             vscode.window.showErrorMessage("No currently active editor");
@@ -177,32 +177,32 @@ export function activate(context: vscode.ExtensionContext) {
     //                                             Sockets
     // --------------------------------------------------------------------------------------------------
 
-    vscode.commands.registerCommand("p2tas-lang.connectSAR", () => server.connect());
-    vscode.commands.registerCommand("p2tas-lang.disconnectSAR", () => server.disconnect());
-    vscode.commands.registerCommand("p2tas-lang.playToolsTAS", () => server.requestToolsPlayback());
-    vscode.commands.registerCommand("p2tas-lang.playRawTAS", () => server.requestRawPlayback());
-    vscode.commands.registerCommand("p2tas-lang.stopTAS", () => server.requestStopPlayback());
-    vscode.commands.registerCommand("p2tas-lang.changeRate", async () => {
+    vscode.commands.registerCommand("p2tas.connectSAR", () => server.connect());
+    vscode.commands.registerCommand("p2tas.disconnectSAR", () => server.disconnect());
+    vscode.commands.registerCommand("p2tas.playToolsTAS", () => server.requestToolsPlayback());
+    vscode.commands.registerCommand("p2tas.playRawTAS", () => server.requestRawPlayback());
+    vscode.commands.registerCommand("p2tas.stopTAS", () => server.requestStopPlayback());
+    vscode.commands.registerCommand("p2tas.changeRate", async () => {
         const input = await vscode.window.showInputBox({ placeHolder: "Desired rate", ignoreFocusOut: true });
         if (!input) return;
         const rate = +input;
         server.requestRatePlayback(rate);
     });
-    vscode.commands.registerCommand("p2tas-lang.resumeTAS", () => server.requestStatePlaying());
-    vscode.commands.registerCommand("p2tas-lang.pauseTAS", () => server.requestStatePaused());
-    vscode.commands.registerCommand("p2tas-lang.fastForward", async () => {
+    vscode.commands.registerCommand("p2tas.resumeTAS", () => server.requestStatePlaying());
+    vscode.commands.registerCommand("p2tas.pauseTAS", () => server.requestStatePaused());
+    vscode.commands.registerCommand("p2tas.fastForward", async () => {
         const input = await vscode.window.showInputBox({ placeHolder: "Fast forward to tick", ignoreFocusOut: true });
         if (!input) return;
         const tick = +input;
         server.requestFastForward(tick, false);
     });
-    vscode.commands.registerCommand("p2tas-lang.setNextPauseTick", async () => {
+    vscode.commands.registerCommand("p2tas.setNextPauseTick", async () => {
         const input = await vscode.window.showInputBox({ placeHolder: "Pause at tick", ignoreFocusOut: true });
         if (!input) return;
         const tick = +input;
         server.requestNextPauseTick(tick);
     });
-    vscode.commands.registerCommand("p2tas-lang.advanceTick", () => server.requestTickAdvance());
+    vscode.commands.registerCommand("p2tas.advanceTick", () => server.requestTickAdvance());
 
 
     // --------------------------------------------------------------------------------------------------
@@ -218,9 +218,9 @@ export function activate(context: vscode.ExtensionContext) {
     );
 
     context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(e => {
-        configuration = vscode.workspace.getConfiguration('p2tas-lang');
+        configuration = vscode.workspace.getConfiguration('p2tas');
 
-        if (e.affectsConfiguration("p2tas-lang.showActiveToolsDisplay")) {
+        if (e.affectsConfiguration("p2tas.showActiveToolsDisplay")) {
             if (configuration.get<boolean>("showActiveToolsDisplay")) {
                 onDidChangeTextEditorSelectionDisposable = registerActiveToolsDisplay();
             }
@@ -230,11 +230,11 @@ export function activate(context: vscode.ExtensionContext) {
             }
         }
 
-        if (e.affectsConfiguration("p2tas-lang.showDebugTick")) {
+        if (e.affectsConfiguration("p2tas.showDebugTick")) {
             updateDebugTickHighlight();
         }
 
-        if (e.affectsConfiguration("p2tas-lang.confirmFieldChangesInSidebar")) {
+        if (e.affectsConfiguration("p2tas.confirmFieldChangesInSidebar")) {
             server.setConfirmFieldChanges(configuration.get<boolean>("confirmFieldChangesInSidebar"));
         }
     }));
@@ -322,7 +322,7 @@ async function drawActiveToolsDisplay(cursorPos: vscode.Position, document: vsco
 }
 
 async function updateDebugTickHighlight() {
-    const enabled = vscode.workspace.getConfiguration('p2tas-lang').get<boolean>("showDebugTick");
+    const enabled = vscode.workspace.getConfiguration('p2tas').get<boolean>("showDebugTick");
     const document = lastPlayedScriptDocument;
     const curTick = server.debugTick;
 
