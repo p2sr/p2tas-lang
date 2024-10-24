@@ -4,7 +4,7 @@ import { TASTool } from "./tasTool";
 import { Token, tokenize, TokenType } from "./tokenizer";
 
 /**
- * The state of the parser. The parser advances the state in the following way (trying to accept 
+ * The state of the parser. The parser advances the state in the following way (trying to accept
  * the respective tokens or falling back to defaults): \
  * Version -> Start -> RngManip -> Framebulks
  */
@@ -16,14 +16,14 @@ enum ParserState {
  * Parser for a TAS script, collecting useful information for the LSP.
  * Due to the nature of TAS scripts, this parser works as a state machine, first expecting a version
  * statement, then a start statement and finally framebulks.
- * 
+ *
  * NOTE: The files this operates on are, in the majority of cases, incorrect/incomplete as the user is
  *       still working on them. This parser thus needs to be able to recover from errors and continue
  *       parsing as much as possible, even if errors have been encountered.
  */
 export class TASScript {
     /** Default assumed script version */
-    readonly DEFAULT_VERSION = 7;
+    readonly DEFAULT_VERSION = 8;
 
     fileText = "";
 
@@ -78,8 +78,9 @@ export class TASScript {
             switch (state) {
                 // Try to accept `version <number>`, falling back to DEFAULT_VERSION
                 case ParserState.Version:
+                    // Make sure a valid version is provided
                     this.expectText("Expected version", "version");
-                    this.scriptVersion = this.expectNumber("Invalid version", 1, 2, 3, 4, 5, 6, 7) ?? this.DEFAULT_VERSION;
+                    this.scriptVersion = this.expectNumber("Invalid version", 1, 2, 3, 4, 5, 6, 7, 8) ?? this.DEFAULT_VERSION;
                     this.expectCount("Ignored parameters", 2);
 
                     this.lines.set(currentLine, new ScriptLine(currentLineText, 0, false, LineType.Version, [], this.tokens[this.lineIndex]));
