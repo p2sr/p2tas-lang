@@ -86,6 +86,7 @@ export namespace TASTool {
             durationIndex: -1,
             arguments: [
                 { text: "on", type: TokenType.String, required: false, description: "Enables ```autojump```." },
+                { text: "ducked", type: TokenType.String, required: false, description: "Enables ```autojump``` while also ducking. Ducking slightly increases your jump height." },
             ],
             description: "**Syntax:** ```autojump [on]```\n\nAnything other than ```on``` will disable the tool.\n\nAutojump tool will change the jump button state depending on whether the player is grounded or not, resulting in automatically jumping on the earliest contact with a ground.\n\n**Example:** ```autojump on```",
             index: 3,
