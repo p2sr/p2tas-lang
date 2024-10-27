@@ -90,6 +90,45 @@ export namespace TASTool {
             description: "**Syntax:** ```check [pos x y z] [ang pitch yaw] [posepsilon val] [angepsilon val]```\n\nThe check tool accepts a target position and angle, and a precision value (posepsilon (default: 0.5), angepsilon (default: 0.2)). **Before** the tick it is on, it will check whether the player position is close to (meaning \"within posepsilon / angepsilon units\") the target position, and if not, replay the active script. It will do this a maximum of ```sar_tas_check_max_replays``` (default 15) times.\n\n**Example:** ```check pos 100 250 312.7```",
             index: 0,
         },
+        stop: {
+            isOrderDetermined: true,
+            hasOff: false,
+            durationIndex: -1,
+            arguments: [],
+            description: "**Syntax:** ```stop```\n\nStops every tool activated prior to given tick.\n\n**Example:** ```stop```",
+            index: 2
+        },
+        use: {
+            isOrderDetermined: true,
+            hasOff: false,
+            durationIndex: -1,
+            arguments: [
+                { text: "spam", type: TokenType.String, required: false, description: "Spams ```+use``` every other tick" },
+            ],
+            description: "**Syntax:** ```use [spam]```\n\nPresses the ```+use``` input. It also has an option for spamming, which will spam +use every other tick.\n\n**Example:** ```use spam```",
+            index: 3
+        },
+        duck: {
+            isOrderDetermined: true,
+            hasOff: false,
+            durationIndex: 0,
+            arguments: [
+                { type: TokenType.Number, required: false }
+            ],
+            description: "**Syntax:** ```duck [duration]```\n\nPresses the duck input. Can take a number parameter for a duration.\n\n**Example:** ```duck 20```",
+            index: 4
+        },
+        zoom: {
+            isOrderDetermined: true,
+            hasOff: false,
+            durationIndex: -1,
+            arguments: [
+                { text: "in", type: TokenType.String, required: false, description: "Zooms in" },
+                { text: "out", type: TokenType.String, required: false, description: "Zooms out" },
+            ],
+            description: "**Syntax:** ```zoom [action]```\n\nUsed for zooming in and out. Also detects whether to press an input based on whether you're zooming or not.\n\n**Example:** ```zoom in```",
+            index: 5
+        },
         shoot: {
             hasFixedOrder: true,
             hasOff: false,
