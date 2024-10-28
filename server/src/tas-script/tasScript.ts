@@ -380,8 +380,8 @@ export class TASScript {
                 continue;
             }
 
-            // A tool currently always has to have at least 1 argument
-            if (this.isNextType(TokenType.Semicolon) || this.tokenIndex >= this.tokens[this.lineIndex].length) {
+            // Write an error if the tool expects arguments but got none
+            if ((this.isNextType(TokenType.Semicolon) || this.tokenIndex >= this.tokens[this.lineIndex].length) && TASTool.tools[toolName].expectsArguments) {
                 DiagnosticCollector.addDiagnosticToLine(toolNameToken.line, toolNameToken.end, "Expected arguments");
                 this.tokenIndex++;
                 continue;
