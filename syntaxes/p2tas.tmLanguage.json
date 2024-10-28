@@ -1,83 +1,100 @@
 {
-	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
-	"name": "Portal 2 TAS script",
-	"patterns": [{"include": "#version"}, {"include": "#start"}, {"include": "#rngmanip"}, {"include": "#framebulk"}, {"include": "#loop"}],
-	"foldingStartMarker": "^\\s*repeat",
-	"foldingStopMarker": "^\\s*end",
-	"repository": {
-		"version": {
-			"patterns": [{
-				"name": "tas_version",
-				"match": "^\\s*(version)(?:\\s+|$)([0-9]+)?",
-				"captures": {
-					"1": {"name": "keyword.control"},
-					"2": {"name": "constant.numeric"}
-				}
-			}]
-		},
-		"start": {
-			"patterns": [{
-				"name": "start_tas",
-				"match": "^\\s*(start)(?:\\s+|$)(?:(next)(?:\\s+|$))?(?:(now|save|map|cm)(?:\\s+|$))?",
-				"captures": {
-					"1": {"name": "keyword.control"},
-					"2": {"name": "keyword.other"},
-					"3": {"name": "keyword.other"}
-				}
-			}]
-		},
-		"rngmanip": {
-			"patterns": [{
-				"name": "keyword.control",
-				"match": "^\\s*(rngmanip)"
-			}]
-		},
-		"framebulk": {
-			"patterns": [{
-				"name": "keyword.other.tools_args",
-				"match": "\\b(?<=(.*(\\|[^\\|]*){4})|(.*>>.*))(strafe|autojump|absmov|setang|autoaim|decel|check|shoot|zoom|duck|use|stop)\\b"
-			},
-			{
-				"name": "variable.parameter",
-				"match": "\\b(?<=(.*(\\|[^\\|]*){4})|(.*>>.*))(on|off|none|vec|ang|veccam|max|keep|forward|forwardvel|left|right|nopitchlock|letspeedlock|pos|posepsilon|angepsilon|ent|ducked|blue|orange|spam|in|out)\\b"
-			},
-			{
-				"name": "ups_or_deg",
-				"match": "\\b\\d+(.\\d*)?(ups|deg)\\b",
-				"captures": {
-					"2": {"name": "variable.parameter"}
-				}
-			},
-			{
-				"name":"string",
-				"match": ">|\\|"
-			},
-			{
-				"name": "constant.numeric.tick_number",
-				"match": "^\\s*\\+?\\d+"
-			},
-			{
-				"name": "comment",
-				"match": "\\s*//.*"
-			}, 
-			{
-				"name": "comment.block",
-				"begin": "\/\\*",
-				"end": "\\*\/"
-			}]
-		},
-		"loop": {
-			"begin": "^\\s*(repeat)\\s*(\\d+)",
-			"end": "^\\s*(end)",
-			"beginCaptures": {
-				"1": {"name": "keyword.control"},
-				"2": {"name": "constant.numeric"}
-			},
-			"endCaptures": {
-				"1": {"name": "keyword.control"}
-			},
-			"patterns": [{ "include": "#framebulk" }, { "include": "#loop" }]
-		}
-	},
-	"scopeName": "source.p2tas"
+    "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+    "name": "Portal 2 TAS script",
+    "patterns": [
+        {"include": "#version"},
+        {"include": "#start"},
+        {"include": "#rngmanip"},
+        {"include": "#framebulk"},
+        {"include": "#loop"}
+    ],
+    "foldingStartMarker": "^\\s*repeat",
+    "foldingStopMarker": "^\\s*end",
+    "repository": {
+        "version": {
+            "patterns": [
+                {
+                    "name": "tas_version",
+                    "match": "^\\s*(version)(?:\\s+|$)([0-9]+)?",
+                    "captures": {
+                        "1": {"name": "keyword.control"},
+                        "2": {"name": "constant.numeric"}
+                    }
+                }
+            ]
+        },
+        "start": {
+            "patterns": [
+                {
+                    "name": "start_tas",
+                    "match": "^\\s*(start)(?:\\s+|$)(?:(next)(?:\\s+|$))?(?:(now|save|map|cm)(?:\\s+|$))?",
+                    "captures": {
+                        "1": {"name": "keyword.control"},
+                        "2": {"name": "keyword.other"},
+                        "3": {"name": "keyword.other"}
+                    }
+                }
+            ]
+        },
+        "rngmanip": {
+            "patterns": [
+                {
+                    "name": "keyword.control",
+                    "match": "^\\s*(rngmanip)"
+                }
+            ]
+        },
+        "framebulk": {
+            "patterns": [
+                {
+                    "name": "keyword.other.tools_args",
+                    "match": "\\b(?<=(.*(\\|[^\\|]*){4})|(.*>>.*))(strafe|autojump|absmov|setang|autoaim|decel|check|shoot|zoom|duck|use|stop)\\b"
+                },
+                {
+                    "name": "variable.parameter",
+                    "match": "\\b(?<=(.*(\\|[^\\|]*){4})|(.*>>.*))(on|off|none|vec|ang|veccam|max|keep|forward|forwardvel|left|right|nopitchlock|letspeedlock|pos|posepsilon|angepsilon|ent|ducked|blue|orange|spam|in|out)\\b"
+                },
+                {
+                    "name": "ups_or_deg",
+                    "match": "\\b\\d+(.\\d*)?(ups|deg)\\b",
+                    "captures": {
+                        "2": {"name": "variable.parameter"}
+                    }
+                },
+                {
+                    "name":"string",
+                    "match": ">|\\|"
+                },
+                {
+                    "name": "constant.numeric.tick_number",
+                    "match": "^\\s*\\+?\\d+"
+                },
+                {
+                    "name": "comment",
+                    "match": "\\s*//.*"
+                },
+                {
+                    "name": "comment.block",
+                    "begin": "\/\\*",
+                    "end": "\\*\/"
+                }
+            ]
+        },
+        "loop": {
+            "begin": "^\\s*(repeat)\\s*(\\d+)",
+            "end": "^\\s*(end)",
+            "beginCaptures": {
+                "1": {"name": "keyword.control"},
+                "2": {"name": "constant.numeric"}
+            },
+            "endCaptures": {
+                "1": {"name": "keyword.control"}
+            },
+            "patterns": [
+                { "include": "#framebulk" },
+                { "include": "#loop" }
+            ]
+        }
+    },
+    "scopeName": "source.p2tas"
 }
