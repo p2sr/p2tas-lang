@@ -1,3 +1,5 @@
+//! Completion/hover descriptions for non-tool items (start, version, repeat/end statements).
+
 interface CompletionDefinition {
     [name: string]: {
         description: string

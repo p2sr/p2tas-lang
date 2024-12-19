@@ -1,3 +1,6 @@
+//! Tokenizer, capable of tokenizing TAS scripts. It also removes comments from tokenized scripts,
+//! meaning they don't appear in the output at all.
+
 import { DiagnosticCollector } from "./diagnosticCollector";
 
 export enum TokenType {
@@ -9,13 +12,21 @@ export enum TokenType {
 export class Token {
     constructor(
         public type: TokenType,
+        /** The raw text of the token. */
         public text: string,
         public line: number,
+        /** Start column. */
         public start: number,
+        /** End column. */
         public end: number,
     ) { }
 }
 
+/**
+ * Tokenizes a file given by `fileText` and returns the tokens and lines of the file.
+ * The tokens are returned as a two-dimensional array, where the first dimension is the line in
+ * the file the token is in and the second-dimension containing the tokens themselves.
+ */
 export function tokenize(fileText: string): [Token[][], string[]] {
     var tokens: Token[][] = [];
 
@@ -30,6 +41,10 @@ export function tokenize(fileText: string): [Token[][], string[]] {
     return [tokens, lines];
 }
 
+/**
+ * Removes all tokens in comments (single line and multiline). This will also emit diagnostics
+ * for any unclosed or unopened multiline comments.
+ */
 function removeComments(tokens: Token[][]) {
     var lineIndex = 0;
     var tokenIndex = 0;
@@ -103,6 +118,7 @@ namespace Tokenizer {
     var lineNumber: number = 0;
     var text: string = "";
 
+    /** Tokenizes a single line of a script and returns the tokens of that line. */
     export function tokenizeLine(lineText: string, ln: number): Token[] {
         index = 0;
         lineNumber = ln;
@@ -123,6 +139,7 @@ namespace Tokenizer {
         }
     }
 
+    /** Advances `index` past the next token and return a result, consisting of either an EOF or a `Token`. */
     function next(): Result | undefined {
         if (index >= text.length) return new Result(ResultType.End);
 
@@ -135,7 +152,18 @@ namespace Tokenizer {
         return new Result(ResultType.Token, new Token(nextType, tokenText, lineNumber, start, end));
     }
 
-    function accept(predicate: (str: string) => boolean): boolean {
+    /**
+     * Function predicate to determine whether a character should be accepted. Note that
+     * JavaScript doesn't have "chars", so this is passed a string of length 1.
+     */
+    type Predicate = (str: string) => boolean;
+
+    /**
+     * Takes a `predicate` and returns whether it accepts the current character in `text`. If it does,
+     * it advances the character index, meaning consecutive calls to `accept()` will consume more and
+     * more of the tokenizer's input string.
+     */
+    function accept(predicate: Predicate): boolean {
         if (index >= text.length) return false;
 
         const c = text[index];
@@ -146,8 +174,7 @@ namespace Tokenizer {
         return false;
     }
 
-    type Predicate = (str: string) => boolean;
-
+    /** Return a `Predicate` that accepts any character in `chars`. */
     function anyOf(chars: string): Predicate {
         return (str: string): boolean => chars.indexOf(str) !== -1;
     }
@@ -156,6 +183,7 @@ namespace Tokenizer {
     const numberPredicate = anyOf("-0123456789");
     const letterPredicate = anyOf("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_-0123456789:().\"\'=@[]");
 
+    /** Advance `index` past the next token and return the corresponding `TokenType`. */
     function nextTokenType(): TokenType {
         // Skip whitespace
         if (accept(whitespacePredicate)) {

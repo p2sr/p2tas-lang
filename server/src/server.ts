@@ -55,6 +55,10 @@ var settings: Settings = defaultSettings;
 
 connection.onDidChangeConfiguration(_ => pullSettings());
 
+/**
+ * Gets settings from client configuration.
+ * In VSCode, these can be found in the Settings tab (or the configuration JSON file).
+ */
 async function pullSettings() {
 	const configuration = await connection.workspace.getConfiguration({ section: "p2tasLanguageServer" });
 
@@ -82,20 +86,24 @@ rawDocuments.onDidOpen((params) => {
 });
 
 rawDocuments.onDidChangeContent((params) => {
+	// parse the script again to collect diagnostics and general script information
+	// could to incremental parsing here, probably overkill for our usecase though
 	const diagnostics = documents.get(params.document.uri)?.parse(params.document.getText());
 	if (diagnostics && settings.doErrorChecking) connection.sendDiagnostics({ uri: params.document.uri, diagnostics });
 });
 
 rawDocuments.onDidClose((params) => { documents.delete(params.document.uri); });
 
-// FIXME: This needs to check if we are in a comment / skip comments on the way of finding the tool.
-//        One idea might be to break when we find a comment open token in "getToolAndArguments", 
-//        and advance to after the comment if we find a "*/".
+// FIXME: We currently also suggest tool arguments when in a multiline comment. We should check whether
+//        the cursor is in a multiline comment and don't suggest anything.
 connection.onCompletion((params: TextDocumentPositionParams): CompletionItem[] => {
 	const script = documents.get(params.textDocument.uri);
 	if (script === undefined) return [];
 	const line = script.lines.get(params.position.line);
 
+	// the line of the cursor is not present in our script (happens e.g. when the user inserts empty lines below the last framebulk)
+	// => suggest start, version, repeat, end
+	// FIXME: Don't suggest version/start if they are already present in the script.
 	if (line === undefined) {
 		return [versionCompletion, startCompletion, repeatCompletion, endCompletion].map((val) => {
 			return {
@@ -108,8 +116,8 @@ connection.onCompletion((params: TextDocumentPositionParams): CompletionItem[] =
 			};
 		});
 	}
+	// suggest tools and arguments for framebulks with 4 pipes, when the cursor is positioned after the last pipe
 	else if (line.type === LineType.Framebulk) {
-		// If we don't have 4 pipes, dont suggest
 		if (line.tokens.filter(tok => tok.type === TokenType.Pipe).length !== 4)
 			return [];
 
@@ -118,12 +126,14 @@ connection.onCompletion((params: TextDocumentPositionParams): CompletionItem[] =
 
 		return completeToolAndArguments(line, params.position.character);
 	}
+	// suggest tools and arguments to tool bulks when after the last '>'
 	else if (line.type === LineType.ToolBulk) {
 		const angleIndex = line.lineText.lastIndexOf('>');
 		if (params.position.character < angleIndex) return [];
 
 		return completeToolAndArguments(line, params.position.character);
 	}
+	// suggest "start" line parameters
 	else if (line.type === LineType.Start) {
 		const [toolName, encounteredWords] = getToolAndArguments(params.position.character, line.tokens);
 		if (toolName !== "start") return [];
@@ -152,11 +162,12 @@ connection.onCompletion((params: TextDocumentPositionParams): CompletionItem[] =
 	return [];
 });
 
+/** Resolve `CompletionItems` for the tool focused by the cursor in line `line` and column `character`. */
 function completeToolAndArguments(line: ScriptLine, character: number): CompletionItem[] {
 	const [toolName, encounteredWords] = getToolAndArguments(character, line.tokens);
 
+	// if no tool was found (e.g. the cursor is right behind a '|'), suggest tools
 	if (toolName.length === 0) {
-		// Complete tool
 		return Object.entries(TASTool.tools).map(([key, value]) => {
 			return {
 				label: key,
@@ -168,14 +179,14 @@ function completeToolAndArguments(line: ScriptLine, character: number): Completi
 			};
 		});
 	}
+	// since a tool was found, suggest its arguments
 	else {
-		// Complete tool arguments
-		// Check if tool exists
 		if (!TASTool.tools.hasOwnProperty(toolName)) return [];
 		if (encounteredWords.includes("off")) return [];
 
 		const tool = TASTool.tools[toolName];
 		const result: CompletionItem[] = [];
+		// add "off" argument suggestion if the tool supports it and no other arguments have been given
 		if (encounteredWords.length === 0 && tool.hasOff) {
 			result.push({
 				label: "off",
@@ -187,6 +198,7 @@ function completeToolAndArguments(line: ScriptLine, character: number): Completi
 			});
 		}
 
+		// suggest arguments that haven't been given yet
 		const toolArguments = tool.arguments;
 		result.push(...toolArguments
 			.filter((arg) => {
@@ -206,7 +218,14 @@ function completeToolAndArguments(line: ScriptLine, character: number): Completi
 	}
 }
 
+/**
+ * From the given character index, go back through the line's tokens to find the corresponding tool and its
+ * arguments up to this point.
+ */
+// TODO: It might be better to have the parser extract this information from the script instead of searching
+//       through the tokens here.
 function getToolAndArguments(character: number, tokens: Token[]): [string, string[]] {
+	// the words we found while going through the line backwards to search for the tool name
 	var encounteredWords: string[] = [];
 	var tool = "";
 
@@ -214,8 +233,13 @@ function getToolAndArguments(character: number, tokens: Token[]): [string, strin
 	outer: {
 		while (--index >= 0) {
 			const token = tokens[index];
+			// skip tokens after the given character position
 			if (character < token.end) continue;
+			// A section (tool section of a framebulk/tool bulk, tool invocation) has ended. Since we're only
+			// interested in the tool and arguments the cursor is "in", stop here.
+			// This is needed when the cursor is right behind a '|' for example.
 			if (token.type === TokenType.Pipe || token.type === TokenType.Semicolon || token.type === TokenType.DoubleRightAngle) break outer;
+			// reached the start of the line
 			if (index - 1 < 0) {
 				tool = token.text;
 				break;
@@ -225,6 +249,7 @@ function getToolAndArguments(character: number, tokens: Token[]): [string, strin
 				case TokenType.String:
 					encounteredWords.push(token.text);
 					break;
+				// we have reached the end of a section
 				case TokenType.Semicolon:
 				case TokenType.Pipe:
 				case TokenType.DoubleRightAngle:
@@ -247,43 +272,51 @@ connection.onHover((params, cancellationToken, workDoneProgressReporter, resultP
 	if (line === undefined) return undefined;
 
 	if (line.type === LineType.Framebulk || line.type === LineType.ToolBulk) {
+		// find hovered token
 		for (var i = 0; i < line.tokens.length; i++) {
 			const token = line.tokens[i];
-			if (params.position.character >= token.start && params.position.character <= token.end) {
-				if (token.type === TokenType.Number) {
-					if (i + 1 >= line.tokens.length || (line.tokens[i + 1].type !== TokenType.RightAngle && line.tokens[i + 1].type !== TokenType.DoubleRightAngle)) continue;
-					return { contents: [`Tick: ${line.tick}`] };
-				}
-				else if (token.type !== TokenType.String) continue;
+			if (params.position.character < token.start || params.position.character > token.end) continue;
 
-				const hoveredWord = token.text;
-				for (const tool of Object.keys(TASTool.tools)) {
-					if (tool === hoveredWord) {
+			// if we are hovering the tick number at the start of the framebulk, show the absolute tick
+			if (token.type === TokenType.Number) {
+				if (i + 1 >= line.tokens.length || (line.tokens[i + 1].type !== TokenType.RightAngle && line.tokens[i + 1].type !== TokenType.DoubleRightAngle)) continue;
+				return { contents: [`Tick: ${line.tick}`] };
+			}
+
+			if (token.type !== TokenType.String) continue;
+
+			// show information tools or tool arguments
+			// TODO: This currently doesn't check which tool the hovered argument belongs to. By doing something
+			//       similar to completeToolAndArguments to find out the tool in question, this could be improved.
+			//       In addition, that might allow us to show information on "off" arguments for example.
+			const hoveredWord = token.text;
+			for (const tool of Object.keys(TASTool.tools)) {
+				if (tool === hoveredWord) {
+					return {
+						contents: {
+							kind: MarkupKind.Markdown,
+							value: TASTool.tools[tool].description
+						}
+					};
+				}
+
+				for (const argument of TASTool.tools[tool].arguments) {
+					if (argument.type !== TokenType.String) continue;
+					if (argument.text === hoveredWord) {
+						if (argument.description === undefined) break;
 						return {
 							contents: {
 								kind: MarkupKind.Markdown,
-								value: TASTool.tools[tool].description
+								value: argument.description,
 							}
 						};
-					}
-
-					for (const argument of TASTool.tools[tool].arguments) {
-						if (argument.type !== TokenType.String) continue;
-						if (argument.text === hoveredWord) {
-							if (argument.description === undefined) break;
-							return {
-								contents: {
-									kind: MarkupKind.Markdown,
-									value: argument.description,
-								}
-							};
-						}
 					}
 				}
 			}
 		}
 	}
 	else if (line.type === LineType.RepeatStart) {
+		// show information on the "repeat" keyword when hovering it
 		if (line.tokens.length > 0 && line.tokens[0].type === TokenType.String && line.tokens[0].text === "repeat" &&
 			params.position.character >= line.tokens[0].start && params.position.character <= line.tokens[0].end) {
 			return {
@@ -295,29 +328,31 @@ connection.onHover((params, cancellationToken, workDoneProgressReporter, resultP
 		}
 	}
 	else if (line.type === LineType.Start) {
+		// find hovered token and show information on the "start" keyword or its arguments
 		for (const token of line.tokens) {
-			if (params.position.character >= token.start && params.position.character <= token.end) {
-				if (token.text === "start")
-					return {
-						contents: {
-							kind: MarkupKind.Markdown,
-							value: startCompletion.description
-						}
-					};
+			if (params.position.character < token.start || params.position.character > token.end) continue;
 
-				if (startTypes.hasOwnProperty(token.text))
-					return {
-						contents: {
-							kind: MarkupKind.Markdown,
-							value: startTypes[token.text].description
-						}
-					};
-			}
+			if (token.text === "start")
+				return {
+					contents: {
+						kind: MarkupKind.Markdown,
+						value: startCompletion.description
+					}
+				};
+
+			if (startTypes.hasOwnProperty(token.text))
+				return {
+					contents: {
+						kind: MarkupKind.Markdown,
+						value: startTypes[token.text].description
+					}
+				};
 		}
 
 		return undefined;
 	}
 	else if (line.type === LineType.End) {
+		// show information on the "end" keyword when hovering it
 		if (line.tokens.length > 0 && line.tokens[0].type === TokenType.String && line.tokens[0].text === "end" &&
 			params.position.character >= line.tokens[0].start && params.position.character <= line.tokens[0].end) {
 			return {
@@ -329,6 +364,7 @@ connection.onHover((params, cancellationToken, workDoneProgressReporter, resultP
 		}
 	}
 	else if (line.type === LineType.Version) {
+		// show information on the "version" keyword when hovering it
 		if (line.tokens.length > 0 && line.tokens[0].type === TokenType.String && line.tokens[0].text === "version" &&
 			params.position.character >= line.tokens[0].start && params.position.character <= line.tokens[0].end) {
 			return {
@@ -341,6 +377,10 @@ connection.onHover((params, cancellationToken, workDoneProgressReporter, resultP
 	}
 });
 
+/**
+ * Returns the active tools on request of the client.
+ * Format: <tool name>/<from line>/<start column>/<end column>[/<ticks remaining if possible>]
+ */
 connection.onRequest("p2tas/activeTools", (params: [any, number]) => {
 	const [uri, lineNumber] = params;
 
@@ -351,9 +391,10 @@ connection.onRequest("p2tas/activeTools", (params: [any, number]) => {
 
 	return line.activeTools.map(tool =>
 		`${tool.tool}/${tool.fromLine}/${tool.startCol}/${tool.endCol}` + (tool.ticksRemaining ? `/${tool.ticksRemaining}` : "")
-	).join(","); // e.g. 'autoaim/0,setang/1/5'
+	).join(",");
 });
 
+/** Returns the absolute tick of the given line on request of the client. */
 connection.onRequest("p2tas/lineTick", (params: [any, number]) => {
 	const [uri, lineNumber] = params;
 
@@ -363,6 +404,7 @@ connection.onRequest("p2tas/lineTick", (params: [any, number]) => {
 	return script.lines.get(lineNumber)?.tick || "";
 });
 
+/** Returns the line at the line with the given tick, or the one before on request of the client. */
 connection.onRequest("p2tas/tickLine", (params: [any, number]) => {
 	const [uri, tick] = params;
 
@@ -380,6 +422,7 @@ connection.onRequest("p2tas/tickLine", (params: [any, number]) => {
 	return lastLine == -1 ? "" : lastLine;
 });
 
+/** Toggles the given line's tick type (absolute <=> relative) on request of the client. */
 connection.onRequest("p2tas/toggleLineTickType", (params: [any, number]) => {
 	const [uri, lineNumber] = params;
 
@@ -395,9 +438,10 @@ connection.onRequest("p2tas/toggleLineTickType", (params: [any, number]) => {
 		let previousLine: ScriptLine | undefined = undefined;
 		let prevLineNumber = lineNumber;
 
+		// Find the previous line
 		while (previousLine === undefined) {
 			prevLineNumber--;
-			
+
 			if (prevLineNumber < 0) return line.lineText;
 
 			previousLine = script.lines.get(prevLineNumber)
@@ -409,6 +453,7 @@ connection.onRequest("p2tas/toggleLineTickType", (params: [any, number]) => {
 		// Invalid line format
 		if (line.tokens[0].type !== TokenType.Number) return line.lineText;
 
+		// Reformat the line to use the new tick format
 		const newTickSection = `+${line.tick - previousLine.tick}`;
 		//     everything before the number                      -|relative tick  -|everything after the tick
 		return `${line.lineText.substring(0, line.tokens[0].start)}${newTickSection}${line.lineText.substring(line.tokens[0].end).replace(/\r|\n/, "")}`;
@@ -418,6 +463,7 @@ connection.onRequest("p2tas/toggleLineTickType", (params: [any, number]) => {
 		// Invalid line format
 		if (line.tokens[0].type !== TokenType.Plus || line.tokens[1].type !== TokenType.Number) return line.lineText;
 
+		// We already have the absolute tick of every line parsed out, so we just need to reformat the line to use it
 		const newTickSection = `${line.tick}`;
 		//      everything before the plus                       -|everything after the plus                                         -|absolute tick  -|everything after the tick                    (remove new line)
 		return `${line.lineText.substring(0, line.tokens[0].start)}${line.lineText.substring(line.tokens[0].end, line.tokens[1].start)}${newTickSection}${line.lineText.substring(line.tokens[1].end).replace(/\r|\n/, "")}`;

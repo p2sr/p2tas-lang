@@ -1,5 +1,6 @@
 import { Diagnostic, DiagnosticSeverity } from "vscode-languageserver/node";
 
+/// Helper to collect diagnostics while parsing to return to the client.
 export class DiagnosticCollector {
     private static instance: DiagnosticCollector;
     private diagnostics: Diagnostic[] = [];
