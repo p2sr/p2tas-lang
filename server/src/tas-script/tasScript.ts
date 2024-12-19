@@ -90,31 +90,13 @@ export class TASScript {
                     this.expectText("Expected start", "start");
                     const startType = this.expectText("Expected start type", "map", "save", "cm", "now", "next");
 
-                    const checkStartTypeArgument = (startType: string, isNested: boolean) => {
+                    /** Accepts the path after map/save/cm start types. */
+                    const acceptStartPathArgument = (startType: string) => {
                         if (startType !== "map" && startType !== "save" && startType !== "cm") return false;
-
-                        var i = this.tokenIndex;
-                        var tokenCount = 2;
-                        var token1 = this.tokens[this.lineIndex][i];
-                        var token2 = this.tokens[this.lineIndex][i + 1];
-                        if (token1 === undefined && token2 === undefined) {
-                            this.expectText("Expected parameter");
-                            return;
-                        }
-
-                        // Accept tokens until there are no more, or two tokens are not adjacent
-                        // E.g.: `1/2/3` - Parsed as separate tokens, but adjacent -> accepted
-                        //       `1/2 3` - First three tokens accepted (^), fourth not adjacent -> error on fourth
-                        while (true) {
-                            if (token2 === undefined) return;
-                            if (token1.end !== token2.start) {
-                                this.expectCount("Ignored parameters", tokenCount + 1 + (isNested ? 1 : 0));
-                            }
-
-                            i++;
-                            token1 = this.tokens[this.lineIndex][i];
-                            token2 = this.tokens[this.lineIndex][i + 1];
-                            tokenCount++;
+                        const count = this.acceptConsecutiveTokens();
+                        if (count === 0) {
+                            const lastToken = this.tokens[this.lineIndex][this.tokenIndex - 1];
+                            DiagnosticCollector.addDiagnosticToLine(lastToken.line, lastToken.end, "Expected arguments");
                         }
                     };
 
@@ -127,14 +109,14 @@ export class TASScript {
                                 if (startType === "now")
                                     this.expectCount("Ignored parameters", 3);
                                 else
-                                    checkStartTypeArgument(startType, true);
+                                    acceptStartPathArgument(startType);
                             }
                         }
                         else {
                             if (startType === "now")
                                 this.expectCount("Ignored parameters", 2);
                             else
-                                checkStartTypeArgument(startType, false);
+                                acceptStartPathArgument(startType);
                         }
                     }
 
@@ -147,8 +129,11 @@ export class TASScript {
                     if (token === undefined) break;
 
                     if (token.type === TokenType.String && token.text === "rngmanip") {
-                        this.expectText("Expected parameter");
-                        this.expectCount("Ignored parameters", 2)
+                        const count = this.acceptConsecutiveTokens();
+                        if (count === 0) {
+                            const lastToken = this.tokens[this.lineIndex][this.tokenIndex - 1];
+                            DiagnosticCollector.addDiagnosticToLine(lastToken.line, lastToken.end, "Expected arguments");
+                        }
                     } else {
                         this.lineIndex--;
                     }
@@ -314,6 +299,35 @@ export class TASScript {
 
         return DiagnosticCollector.getDiagnostics();
     }
+
+    /**
+     * Accepts any number of consecutive tokens in the current line and returns how many were accepted.
+     *
+     * Example:
+     * `1/2/3` - Tokenized as separate tokens, but consecutive - accepted! \
+     * `1/2 3` - First three tokens are accepted, the fourth token is not adjacent - only three tokens accepted.
+     */
+    private acceptConsecutiveTokens(): number {
+        var token1 = this.maybeNext();
+        if (token1 === undefined) return 0;
+        var token2 = this.maybeNext();
+        if (token2 === undefined) return 1;
+
+        var count = 2;
+        while (true) {
+            // Return `count - 1`, since we didn't actually accept the last token (`token2`)
+            if (token2 === undefined) return count - 1;
+            if (token1.end !== token2.start) {
+                this.tokenIndex--;
+                return count - 1;
+            }
+
+            token1 = token2;
+            token2 = this.maybeNext();
+            count++;
+        }
+    }
+
 
     private parseButtonsField() {
         if (this.tokens[this.lineIndex].length <= this.tokenIndex) return;
