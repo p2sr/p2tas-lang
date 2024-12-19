@@ -4,8 +4,11 @@ export namespace TASTool {
     export class Tool {
         constructor(
             public tool: string,
+            /** The line at which the tool was invoked. */
             public fromLine: number,
+            /** The column on the `fromLine` at which the tool invocation starts (first character of the tool name). */
             public startCol: number,
+            /** The column on the `fromLine` at which the tool invocation ends (character after the last argument). */
             public endCol: number,
             public ticksRemaining?: number,
         ) { }
@@ -17,12 +20,19 @@ export namespace TASTool {
 
     interface ToolDefinition {
         [name: string]: {
-            readonly isOrderDetermined: boolean,
+            /**  Whether the arguments of this tool have a fixed order. */
+            readonly hasFixedOrder: boolean,
+            /**
+             * Whether the tool has an "off" argument. This is treated separately, as it should always
+             * appear on its own and should not be suggested if other arguments are present.
+             */
             readonly hasOff: boolean,
+            /**  The index of the argument in `arguments` that defines for how long the tool runs. */
             readonly durationIndex: number,
             readonly arguments: ToolArgument[],
             readonly description: string,
-            readonly index: number, // priority index from SAR (- 1) (used only in version >= 3)
+            /**  Index of the tool in SAR's execution order (minus 1) (used only in version >= 3). */
+            readonly index: number,
         }
     }
 
@@ -31,16 +41,25 @@ export namespace TASTool {
             readonly type: TokenType,
             readonly required: boolean,
             readonly text?: string,
-            readonly unit?: string, // if it ends with a '?', it's optional (see absmov)
+            /** If the unit ends with a '?', it is optional (e.g. absmov). */
+            readonly unit?: string,
             readonly description?: string,
+            /**
+             * The arguments that need to be present if this argument is used (e.g. when a tool
+             * takes a keyword and a "parameter" for the keyword, as in "autoaim ent <entity>")
+             */
             readonly children?: ToolArgument[],
-            readonly otherwiseChildren?: ToolArgument[], // children if this argument didn't match (better name pls?)
+            /**
+             * This argument's children if the argument isn't used (e.g. autoaim takes either an
+             * entity or a coordinate) (better name?!) 
+             */
+            readonly otherwiseChildren?: ToolArgument[],
         ) { }
     }
 
     export const tools: ToolDefinition = {
         strafe: {
-            isOrderDetermined: false,
+            hasFixedOrder: false,
             hasOff: true,
             durationIndex: -1,
             arguments: [
@@ -62,7 +81,7 @@ export namespace TASTool {
             index: 5,
         },
         autojump: {
-            isOrderDetermined: true,
+            hasFixedOrder: true,
             hasOff: true,
             durationIndex: -1,
             arguments: [
@@ -72,7 +91,7 @@ export namespace TASTool {
             index: 3,
         },
         absmov: {
-            isOrderDetermined: true,
+            hasFixedOrder: true,
             hasOff: true,
             durationIndex: -1,
             arguments: [
@@ -83,7 +102,7 @@ export namespace TASTool {
             index: 4,
         },
         setang: {
-            isOrderDetermined: true,
+            hasFixedOrder: true,
             hasOff: false,
             durationIndex: 3,
             arguments: [
@@ -96,7 +115,7 @@ export namespace TASTool {
             index: 1,
         },
         autoaim: {
-            isOrderDetermined: true,
+            hasFixedOrder: true,
             hasOff: true,
             durationIndex: 3,
             arguments: [
@@ -115,7 +134,7 @@ export namespace TASTool {
             index: 2,
         },
         decel: {
-            isOrderDetermined: true,
+            hasFixedOrder: true,
             hasOff: true,
             durationIndex: -1,
             arguments: [
@@ -125,7 +144,7 @@ export namespace TASTool {
             index: 6,
         },
         check: {
-            isOrderDetermined: true,
+            hasFixedOrder: true,
             hasOff: false,
             durationIndex: 100, // janky hack to make this never show as an active tool
             arguments: [

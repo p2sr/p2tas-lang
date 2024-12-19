@@ -9,6 +9,11 @@ Syntax highlighting, snippets and autocompletion for the Portal 2 TAS files, usi
 1. Go to the [Marketplace](https://marketplace.visualstudio.com/items?itemName=Portal2SpeedrunningHub.p2tas) or search for "Portal 2 TAS Tools" in the extensions tab in Visual Studio Code
 2. Press "Install"
 
+## Building
+
+1. Install packages using `npm install` in the root directory
+2. Run the extension and language server using the "Run and Debug" feature of VSCode. Selecting "Client + Server" will create a new VSCode session with the extension installed, as well as start the language server and connect a debugger to both.
+
 ## Release Notes
 
 ### 1.4.2
