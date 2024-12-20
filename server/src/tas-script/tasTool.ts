@@ -93,7 +93,7 @@ export namespace TASTool {
             index: 0,
         },
         stop: {
-            isOrderDetermined: true,
+            hasFixedOrder: true,
             hasOff: false,
             durationIndex: -1,
             arguments: [],
@@ -102,7 +102,7 @@ export namespace TASTool {
             index: 2
         },
         use: {
-            isOrderDetermined: true,
+            hasFixedOrder: true,
             hasOff: false,
             durationIndex: -1,
             arguments: [
@@ -113,7 +113,7 @@ export namespace TASTool {
             index: 3
         },
         duck: {
-            isOrderDetermined: true,
+            hasFixedOrder: true,
             hasOff: false,
             durationIndex: 0,
             arguments: [
@@ -124,7 +124,7 @@ export namespace TASTool {
             index: 4
         },
         zoom: {
-            isOrderDetermined: true,
+            hasFixedOrder: true,
             hasOff: false,
             durationIndex: -1,
             arguments: [
