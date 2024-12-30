@@ -93,7 +93,7 @@ export namespace TASTool {
             index: 0,
         },
         stop: {
-            hasFixedOrder: true,
+            hasFixedOrder: false,
             hasOff: false,
             durationIndex: -1,
             arguments: [],
@@ -169,7 +169,11 @@ export namespace TASTool {
             arguments: [
                 {
                     type: TokenType.String, text: "ent", required: false, children: [
-                        { type: TokenType.String, required: true },
+                        { 
+                            type: TokenType.String, required: false, otherwiseChildren: [
+                                { type: TokenType.Number, required: true }
+                            ]
+                        },
                     ], otherwiseChildren: [
                         { type: TokenType.Number, required: true },
                         { type: TokenType.Number, required: true },
@@ -188,10 +192,11 @@ export namespace TASTool {
             durationIndex: -1,
             arguments: [
                 { text: "on", type: TokenType.String, required: false, description: "Enables ```autojump```." },
+                { text: "duck", type: TokenType.String, required: false, description: "Enables ```autojump``` while also ducking. Ducking slightly increases your jump height." },
                 { text: "ducked", type: TokenType.String, required: false, description: "Enables ```autojump``` while also ducking. Ducking slightly increases your jump height." },
             ],
             expectsArguments: true,
-            description: "**Syntax:** ```autojump [on]```\n\nAnything other than ```on``` will disable the tool.\n\nAutojump tool will change the jump button state depending on whether the player is grounded or not, resulting in automatically jumping on the earliest contact with a ground.\n\n**Example:** ```autojump on```",
+            description: "**Syntax:** ```autojump [on|duck|ducked]```\n\nAnything other than ```on```, ```duck``` or ```ducked``` will disable the tool.\n\nAutojump tool will change the jump button state depending on whether the player is grounded or not, resulting in automatically jumping on the earliest contact with a ground.\n\n**Example:** ```autojump on```",
             index: 10,
         },
         absmov: {
