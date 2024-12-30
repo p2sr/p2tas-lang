@@ -511,42 +511,47 @@ export class TASScript {
             }
             else {
                 // Accept the tool arguments in any order
-                while (this.tokenIndex < this.tokens[this.lineIndex].length && this.tokens[this.lineIndex][this.tokenIndex].type !== TokenType.Semicolon) {
-                    const argumentToken = this.currentToken();
-                    blk: {
-                        // Try to find an argument that matches
-                        for (const toolArg of tool.arguments) {
-                            if (toolArg.type === argumentToken.type) {
-                                if (argumentToken.type === TokenType.String) {
-                                    if (toolArg.text !== undefined && toolArg.text === argumentToken.text)
-                                        break blk;
-                                }
-                                else if (toolArg.type === TokenType.Number && toolArg.unit !== undefined) {
-                                    if (this.tokenIndex + 1 < this.tokens[this.lineIndex].length) {
-                                        // Increment the `tokenIndex` briefly to check the token's type after the argument
-                                        // (`tokenIndex` is pointing at the number)
-                                        this.tokenIndex++;
-                                        if (this.isNextType(TokenType.String)) {
-                                            this.tokenIndex--;
-                                            const unitToken = this.tokens[this.lineIndex][this.tokenIndex];
-                                            // TODO: Emit diagnostics for incorrect units.
-                                            if (unitToken.text === toolArg.unit) break blk;
-                                        }
-                                        // Decrement again, since the argument didn't match and we need to check the next
-                                        // argument using the loop
-                                        this.tokenIndex--;
-                                    }
-                                }
-                                else break blk;
-                            }
-                        }
 
-                        // Couldn't find a matching argument
-                        DiagnosticCollector.addDiagnostic(argumentToken.line, argumentToken.start, argumentToken.end, "Invalid argument");
+                // But, only do it if the tool actually has arguments!
+                if (tool.arguments.length > 0) {
+                    while (this.tokenIndex < this.tokens[this.lineIndex].length && this.tokens[this.lineIndex][this.tokenIndex].type !== TokenType.Semicolon) {
+                        const argumentToken = this.currentToken();
+                        blk: {
+                            // Try to find an argument that matches
+                            for (const toolArg of tool.arguments) {
+                                if (toolArg.type === argumentToken.type) {
+                                    if (argumentToken.type === TokenType.String) {
+                                        if (toolArg.text !== undefined && toolArg.text === argumentToken.text)
+                                            break blk;
+                                    }
+                                    else if (toolArg.type === TokenType.Number && toolArg.unit !== undefined) {
+                                        if (this.tokenIndex + 1 < this.tokens[this.lineIndex].length) {
+                                            // Increment the `tokenIndex` briefly to check the token's type after the argument
+                                            // (`tokenIndex` is pointing at the number)
+                                            this.tokenIndex++;
+                                            if (this.isNextType(TokenType.String)) {
+                                                this.tokenIndex--;
+                                                const unitToken = this.tokens[this.lineIndex][this.tokenIndex];
+                                                // TODO: Emit diagnostics for incorrect units.
+                                                if (unitToken.text === toolArg.unit) break blk;
+                                            }
+                                            // Decrement again, since the argument didn't match and we need to check the next
+                                            // argument using the loop
+                                            this.tokenIndex--;
+                                        }
+                                    }
+                                    else break blk;
+                                }
+                            }
+
+                            // Couldn't find a matching argument
+                            DiagnosticCollector.addDiagnostic(argumentToken.line, argumentToken.start, argumentToken.end, "Invalid argument");
+                        }
+                        this.tokenIndex++;
                     }
+
                     this.tokenIndex++;
                 }
-                this.tokenIndex++;
 
                 // Update `activeTools` with the new tool
                 activeTools.push(new TASTool.Tool(
