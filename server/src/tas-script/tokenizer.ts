@@ -4,9 +4,17 @@
 import { DiagnosticCollector } from "./diagnosticCollector";
 
 export enum TokenType {
-    Plus, Number, RightAngle, DoubleRightAngle, Pipe, Semicolon, String, Whitespace,
+    Plus,
+    Number,
+    RightAngle,
+    DoubleRightAngle,
+    Pipe,
+    Semicolon,
+    String,
+    Whitespace,
     SingleLineComment,
-    MultilineCommentOpen, MultilineCommentClose,
+    MultilineCommentOpen,
+    MultilineCommentClose
 }
 
 export class Token {
