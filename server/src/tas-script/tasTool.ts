@@ -32,7 +32,11 @@ export namespace TASTool {
             readonly arguments: ToolArgument[],
             readonly expectsArguments: boolean,
             readonly description: string,
-            /**  Index of the tool in SAR's execution order (minus 1) (used only in version >= 3). */
+            /**
+             * Index of the tool in SAR's execution order This is only used in version >= 3.
+             *
+             * @see https://github.com/p2sr/SourceAutoRecord/blob/master/src/Features/Tas/TasTool.cpp#L18
+             */
             readonly index: number,
         }
     }
@@ -169,7 +173,7 @@ export namespace TASTool {
             arguments: [
                 {
                     type: TokenType.String, text: "ent", required: false, children: [
-                        { 
+                        {
                             type: TokenType.String, required: false, otherwiseChildren: [
                                 { type: TokenType.Number, required: true }
                             ]
@@ -185,6 +189,19 @@ export namespace TASTool {
             expectsArguments: true,
             description: "**Syntax:** ```autoaim [ent] <x> <y> <z> [time]```\n\nThe Auto Aim tool will automatically aim towards a specified point in 3D space.\n\n**Example:** ```autoaim 0 0 0 20```",
             index: 8,
+        },
+        look: {
+            hasFixedOrder: true,
+            hasOff: true,
+            durationIndex: -1,
+            arguments: [
+                { type: TokenType.Number, unit: "deg", required: true },
+                { type: TokenType.Number, unit: "deg", required: true },
+                { type: TokenType.Number, required: false }
+            ],
+            expectsArguments: true,
+            description: "**Syntax:** ```look <pitch> <yaw> [time]```\n\nCan be used to control the view analog. It also accepts additional parameters, like word-based directions or time.\n\n**Example:** ```look 10deg 173deg 10```",
+            index: 9
         },
         autojump: {
             hasFixedOrder: true,

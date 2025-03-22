@@ -48,7 +48,7 @@
             "patterns": [
                 {
                     "name": "keyword.other.tools_args",
-                    "match": "\\b(?<=(.*(\\|[^\\|]*){4})|(.*>>.*))(strafe|autojump|absmov|setang|autoaim|decel|check|shoot|zoom|duck|use|stop)\\b"
+                    "match": "\\b(?<=(.*(\\|[^\\|]*){4})|(.*>>.*))(strafe|autojump|absmov|setang|autoaim|decel|check|shoot|zoom|duck|use|stop|look)\\b"
                 },
                 {
                     "name": "variable.parameter",
