@@ -586,8 +586,13 @@ export class TASScript {
                 return;
             }
 
+            // Define what the unit is supposed to be
             const unitToken = this.tokens[this.lineIndex][this.tokenIndex - 1];
-            if (unitToken.text !== arg.unit.substring(0, arg.unit.length - 1))
+            // Find out what the unit provided in the TAS file actually is
+            // This must be cut off if the unit is optional, to avoid accidentally requiring the question mark.
+            const providedUnit = isUnitOptional ? arg.unit.substring(0, arg.unit.length - 1) : arg.unit;
+
+            if (unitToken.text !== providedUnit)
                 DiagnosticCollector.addDiagnostic(unitToken.line, unitToken.start, unitToken.end, "Invalid unit");
         }
     }
