@@ -56,7 +56,7 @@ export namespace TASTool {
             readonly children?: ToolArgument[],
             /**
              * This argument's children if the argument isn't used (e.g. autoaim takes either an
-             * entity or a coordinate) (better name?!)
+             * entity or a coordinate) (better name?!) (nah this needs to be completely rewritten imho)
              */
             readonly otherwiseChildren?: ToolArgument[],
         ) { }
@@ -195,9 +195,19 @@ export namespace TASTool {
             hasOff: true,
             durationIndex: -1,
             arguments: [
-                { type: TokenType.Number, unit: "deg", required: true },
-                { type: TokenType.Number, unit: "deg", required: true },
-                { type: TokenType.Number, required: false }
+                {
+                    text: "stop", type: TokenType.String, required: false, otherwiseChildren: [
+                        {
+                            type: TokenType.Number, unit: "deg", required: false, children: [
+                                { type: TokenType.Number, unit: "deg", required: true }
+                            ], otherwiseChildren: [
+                                { type: TokenType.String, required: true },
+                                { type: TokenType.String, required: false }
+                            ]
+                        },
+                        { type: TokenType.Number, required: false, description: "Look duration, in ticks" }
+                    ]
+                }
             ],
             expectsArguments: true,
             description: "**Syntax:** ```look <pitch> <yaw> [time]```\n\nCan be used to control the view analog. It also accepts additional parameters, like word-based directions or time.\n\n**Example:** ```look 10deg 173deg 10```",
