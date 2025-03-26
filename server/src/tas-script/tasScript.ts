@@ -552,6 +552,11 @@ export class TASScript {
 
                     this.tokenIndex++;
                 }
+                // If the tool doesn't have any native arguments, but still allows arbitrary arguments, process until the next semicolon
+                else if (tool.allowArbitraryArguments) {
+                    while (this.tokenIndex < this.tokens[this.lineIndex].length && this.tokens[this.lineIndex][this.tokenIndex].type !== TokenType.Semicolon)
+                        this.tokenIndex++;
+                }
 
                 // Update `activeTools` with the new tool
                 activeTools.push(new TASTool.Tool(
