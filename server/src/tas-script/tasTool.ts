@@ -238,6 +238,27 @@ export namespace TASTool {
             description: "**Syntax:** ```absmov <angle> [strength]```\n\nAbsolute movement tool will generate movement values depending on the absolute move direction you provide in degrees. Giving off as an argument will disable the tool. The strength parameter must be between 0 and 1 (default) and controls how fast the player will move.\n\n**Example:** ```absmov 90 0.5```",
             index: 11,
         },
+        move: {
+            hasFixedOrder: true,
+            hasOff: true,
+            durationIndex: -1,
+            arguments: [
+                {
+                    text: "stop", type: TokenType.String, required: false, otherwiseChildren: [
+                        {
+                            type: TokenType.Number, unit: "deg", required: false, otherwiseChildren: [
+                                { type: TokenType.String, required: true },
+                                { type: TokenType.String, required: false }
+                            ]
+                        },
+                        { type: TokenType.Number, required: false, description: "Scale factor" }
+                    ]
+                }
+            ],
+            expectsArguments: true,
+            description: "**Syntax:** ```move <direction> [scale]```\n\nControls the movement analog. Can accept 1-2 direction parameters, as well as word-based parameters.\n\n**Example:** ```move forward left```",
+            index: 12
+        },
         strafe: {
             hasFixedOrder: false,
             hasOff: true,
