@@ -31,6 +31,11 @@ export namespace TASTool {
             readonly durationIndex: number,
             readonly arguments: ToolArgument[],
             readonly expectsArguments: boolean,
+            /**
+             * If set to `true` and tool has no native arguments, bypass argument error checking for this tool.
+             * Effectively allows anything to be parsed as arguments to the tool without giving errors.
+             */
+            readonly allowArbitraryArguments: boolean,
             readonly description: string,
             /**
              * Index of the tool in SAR's execution order This is only used in version >= 3.
@@ -93,8 +98,19 @@ export namespace TASTool {
                 },
             ],
             expectsArguments: true,
+            allowArbitraryArguments: false,
             description: "**Syntax:** ```check [pos x y z] [ang pitch yaw] [posepsilon val] [angepsilon val]```\n\nThe check tool accepts a target position and angle, and a precision value (posepsilon (default: 0.5), angepsilon (default: 0.2)). **Before** the tick it is on, it will check whether the player position is close to (meaning \"within posepsilon / angepsilon units\") the target position, and if not, replay the active script. It will do this a maximum of ```sar_tas_check_max_replays``` (default 15) times.\n\n**Example:** ```check pos 100 250 312.7```",
             index: 0,
+        },
+        cmd: {
+            hasFixedOrder: false,
+            hasOff: false,
+            durationIndex: -1,
+            arguments: [],
+            expectsArguments: true,
+            allowArbitraryArguments: true,
+            description: "**Syntax:** ```cmd <command>```\n\nRuns the provided console command. Not encased in quotes.\n\n**Example:** ```cmd say hello world!```",
+            index: 1
         },
         stop: {
             hasFixedOrder: false,
@@ -102,6 +118,7 @@ export namespace TASTool {
             durationIndex: -1,
             arguments: [],
             expectsArguments: false,
+            allowArbitraryArguments: false,
             description: "**Syntax:** ```stop```\n\nStops every tool activated prior to given tick.\n\n**Example:** ```stop```",
             index: 2
         },
@@ -113,6 +130,7 @@ export namespace TASTool {
                 { text: "spam", type: TokenType.String, required: false, description: "Spams ```+use``` every other tick" },
             ],
             expectsArguments: false,
+            allowArbitraryArguments: false,
             description: "**Syntax:** ```use [spam]```\n\nPresses the ```+use``` input. It also has an option for spamming, which will spam +use every other tick.\n\n**Example:** ```use spam```",
             index: 3
         },
@@ -124,6 +142,7 @@ export namespace TASTool {
                 { type: TokenType.Number, required: false }
             ],
             expectsArguments: false,
+            allowArbitraryArguments: false,
             description: "**Syntax:** ```duck [duration]```\n\nPresses the duck input. Can take a number parameter for a duration.\n\n**Example:** ```duck 20```",
             index: 4
         },
@@ -136,6 +155,7 @@ export namespace TASTool {
                 { text: "out", type: TokenType.String, required: false, description: "Zooms out" },
             ],
             expectsArguments: true,
+            allowArbitraryArguments: false,
             description: "**Syntax:** ```zoom [action]```\n\nUsed for zooming in and out. Also detects whether to press an input based on whether you're zooming or not.\n\n**Example:** ```zoom in```",
             index: 5
         },
@@ -149,6 +169,7 @@ export namespace TASTool {
                 { text: "spam", type: TokenType.String, required: false, description: "Automates spamming, automatically detecting the portal gun's cooldown" },
             ],
             expectsArguments: true,
+            allowArbitraryArguments: false,
             description: "**Syntax:** ```shoot [portal]```\n\nUsed to shoot portals. Can automate spamming with the ```spam``` property, which will automatically detect the portal gun's cooldown.\n\n**Example:** ```shoot blue```",
             index: 6
         },
@@ -163,6 +184,7 @@ export namespace TASTool {
                 { type: TokenType.String, required: false, description: "Easing type for the setang among: `cubic`, `exp`/`exponential`, `linear` or `sin`/`sine`" },
             ],
             expectsArguments: true,
+            allowArbitraryArguments: false,
             description: "**Syntax:** ```setang <pitch> <yaw> [time] [easing]```\n\nThis tool works basically the same as setang console command. It will adjust the view analog in a way so the camera is looking towards given angles.\n\n**Example:** ```setang 0 0 20```",
             index: 7,
         },
@@ -187,6 +209,7 @@ export namespace TASTool {
                 { type: TokenType.Number, required: false },
             ],
             expectsArguments: true,
+            allowArbitraryArguments: false,
             description: "**Syntax:** ```autoaim [ent] <x> <y> <z> [time]```\n\nThe Auto Aim tool will automatically aim towards a specified point in 3D space.\n\n**Example:** ```autoaim 0 0 0 20```",
             index: 8,
         },
@@ -210,6 +233,7 @@ export namespace TASTool {
                 }
             ],
             expectsArguments: true,
+            allowArbitraryArguments: false,
             description: "**Syntax:** ```look <pitch> <yaw> [time]```\n\nCan be used to control the view analog. It also accepts additional parameters, like word-based directions or time.\n\n**Example:** ```look 10deg 173deg 10```",
             index: 9
         },
@@ -223,6 +247,7 @@ export namespace TASTool {
                 { text: "ducked", type: TokenType.String, required: false, description: "Enables ```autojump``` while also ducking. Ducking slightly increases your jump height." },
             ],
             expectsArguments: true,
+            allowArbitraryArguments: false,
             description: "**Syntax:** ```autojump [on|duck|ducked]```\n\nAnything other than ```on```, ```duck``` or ```ducked``` will disable the tool.\n\nAutojump tool will change the jump button state depending on whether the player is grounded or not, resulting in automatically jumping on the earliest contact with a ground.\n\n**Example:** ```autojump on```",
             index: 10,
         },
@@ -235,6 +260,7 @@ export namespace TASTool {
                 { type: TokenType.Number, required: false },
             ],
             expectsArguments: true,
+            allowArbitraryArguments: false,
             description: "**Syntax:** ```absmov <angle> [strength]```\n\nAbsolute movement tool will generate movement values depending on the absolute move direction you provide in degrees. Giving off as an argument will disable the tool. The strength parameter must be between 0 and 1 (default) and controls how fast the player will move.\n\n**Example:** ```absmov 90 0.5```",
             index: 11,
         },
@@ -256,6 +282,7 @@ export namespace TASTool {
                 }
             ],
             expectsArguments: true,
+            allowArbitraryArguments: false,
             description: "**Syntax:** ```move <direction> [scale]```\n\nControls the movement analog. Can accept 1-2 direction parameters, as well as word-based parameters.\n\n**Example:** ```move forward left```",
             index: 12
         },
@@ -279,6 +306,7 @@ export namespace TASTool {
                 { type: TokenType.Number, unit: "deg", required: false },
             ],
             expectsArguments: true,
+            allowArbitraryArguments: false,
             description: "**Syntax:** ```strafe [parameters]```\n\nThe strafe tool will adjust player input to get a different kind of strafing depending on parameters.\n\n**Example:** ```strafe 299.999ups left veccam```",
             index: 13,
         },
@@ -290,6 +318,7 @@ export namespace TASTool {
                 { type: TokenType.Number, unit: "ups?", required: false },
             ],
             expectsArguments: true,
+            allowArbitraryArguments: false,
             description: "**Syntax:** ```decel <speed>```\n\nThe decelaration tool will slow down as quickly as possible to the given speed.\n\n**Example:** ```decel 100```",
             index: 14,
         }
