@@ -27,7 +27,16 @@ export namespace TASTool {
              * appear on its own and should not be suggested if other arguments are present.
              */
             readonly hasOff: boolean,
-            /**  The index of the argument in `arguments` that defines for how long the tool runs. */
+            /**
+             * Whether this tool should be added to the list of running tools when it is activated.
+             * If set to `false`, never adds the tool to the list of active tools.
+             * This is useful for tools that only do an action at one point in time as opposed to running a lasting effect.
+             */
+            readonly registerActiveState: boolean,
+            /**
+             * The index of the argument in `arguments` that defines for how long the tool runs.
+             * If set to `-1`, marks the tool as running forever (or until manually turned off)
+             */
             readonly durationIndex: number,
             readonly arguments: ToolArgument[],
             readonly expectsArguments: boolean,
@@ -71,7 +80,8 @@ export namespace TASTool {
         check: {
             hasFixedOrder: true,
             hasOff: false,
-            durationIndex: 100, // janky hack to make this never show as an active tool
+            registerActiveState: false,
+            durationIndex: -1,
             arguments: [
                 {
                     text: "pos", type: TokenType.String, required: false, children: [
@@ -105,6 +115,7 @@ export namespace TASTool {
         cmd: {
             hasFixedOrder: false,
             hasOff: false,
+            registerActiveState: false,
             durationIndex: -1,
             arguments: [],
             expectsArguments: true,
@@ -115,6 +126,7 @@ export namespace TASTool {
         stop: {
             hasFixedOrder: false,
             hasOff: false,
+            registerActiveState: false,
             durationIndex: -1,
             arguments: [],
             expectsArguments: false,
@@ -125,6 +137,7 @@ export namespace TASTool {
         use: {
             hasFixedOrder: true,
             hasOff: false,
+            registerActiveState: false,
             durationIndex: -1,
             arguments: [
                 { text: "spam", type: TokenType.String, required: false, description: "Spams ```+use``` every other tick" },
@@ -137,6 +150,7 @@ export namespace TASTool {
         duck: {
             hasFixedOrder: true,
             hasOff: false,
+            registerActiveState: true,
             durationIndex: 0,
             arguments: [
                 { type: TokenType.Number, required: false }
@@ -149,6 +163,7 @@ export namespace TASTool {
         zoom: {
             hasFixedOrder: true,
             hasOff: false,
+            registerActiveState: false,
             durationIndex: -1,
             arguments: [
                 { text: "in", type: TokenType.String, required: false, description: "Zooms in" },
@@ -162,6 +177,7 @@ export namespace TASTool {
         shoot: {
             hasFixedOrder: true,
             hasOff: false,
+            registerActiveState: false,
             durationIndex: -1,
             arguments: [
                 { text: "blue", type: TokenType.String, required: false, description: "Shoots the blue portal" },
@@ -176,6 +192,7 @@ export namespace TASTool {
         setang: {
             hasFixedOrder: true,
             hasOff: false,
+            registerActiveState: true,
             durationIndex: 3,
             arguments: [
                 { type: TokenType.Number, required: true },
@@ -191,6 +208,7 @@ export namespace TASTool {
         autoaim: {
             hasFixedOrder: true,
             hasOff: true,
+            registerActiveState: true,
             durationIndex: 3,
             arguments: [
                 {
@@ -216,7 +234,8 @@ export namespace TASTool {
         look: {
             hasFixedOrder: true,
             hasOff: true,
-            durationIndex: -1,
+            registerActiveState: true,
+            durationIndex: 1,
             arguments: [
                 {
                     text: "stop", type: TokenType.String, required: false, otherwiseChildren: [
@@ -227,10 +246,10 @@ export namespace TASTool {
                                 { type: TokenType.String, required: true },
                                 { type: TokenType.String, required: false }
                             ]
-                        },
-                        { type: TokenType.Number, required: false, description: "Look duration, in ticks" }
+                        }
                     ]
-                }
+                },
+                { type: TokenType.Number, required: false, description: "Look duration, in ticks" }
             ],
             expectsArguments: true,
             allowArbitraryArguments: false,
@@ -240,6 +259,7 @@ export namespace TASTool {
         autojump: {
             hasFixedOrder: true,
             hasOff: true,
+            registerActiveState: true,
             durationIndex: -1,
             arguments: [
                 { text: "on", type: TokenType.String, required: false, description: "Enables ```autojump```." },
@@ -254,6 +274,7 @@ export namespace TASTool {
         absmov: {
             hasFixedOrder: true,
             hasOff: true,
+            registerActiveState: true,
             durationIndex: -1,
             arguments: [
                 { type: TokenType.Number, unit: "deg?", required: false },
@@ -267,6 +288,7 @@ export namespace TASTool {
         move: {
             hasFixedOrder: true,
             hasOff: true,
+            registerActiveState: true,
             durationIndex: -1,
             arguments: [
                 {
@@ -289,6 +311,7 @@ export namespace TASTool {
         strafe: {
             hasFixedOrder: false,
             hasOff: true,
+            registerActiveState: true,
             durationIndex: -1,
             arguments: [
                 { text: "vec", type: TokenType.String, required: false, description: "Enables vectorial strafing (movement analog is adjusted to get desired movement direction). (default)" },
@@ -313,6 +336,7 @@ export namespace TASTool {
         decel: {
             hasFixedOrder: true,
             hasOff: true,
+            registerActiveState: true,
             durationIndex: -1,
             arguments: [
                 { type: TokenType.Number, unit: "ups?", required: false },
