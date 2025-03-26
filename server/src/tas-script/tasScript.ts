@@ -476,25 +476,27 @@ export class TASScript {
                 }
 
                 // Update `activeTools` with the new tool
-                if (tool.durationIndex === -1) {
-                    activeTools.push(new TASTool.Tool(
-                        toolName,
-                        this.lineIndex,
-                        toolNameToken.start,
-                        this.tokens[this.lineIndex][this.tokenIndex - 1].end,
-                    ));
-                } else {
-                    // FIXME: autoaim's duration argument is optional, and if not supplied, autoaim will stay active until manually
-                    //        turned off. However, since it has a durationIndex, we are not handling it above. This should be handled
-                    //        in a more general way.
-                    if (toolName === "autoaim" || toolDuration !== undefined) {
+                if (tool.registerActiveState) {
+                    if (tool.durationIndex === -1) {
                         activeTools.push(new TASTool.Tool(
                             toolName,
                             this.lineIndex,
                             toolNameToken.start,
-                            this.tokens[this.lineIndex][this.tokenIndex - 1].end,
-                            toolDuration,
+                            this.tokens[this.lineIndex][this.tokenIndex - 1].end
                         ));
+                    } else {
+                        // FIXME: autoaim's duration argument is optional, and if not supplied, autoaim will stay active until manually
+                        //        turned off. However, since it has a durationIndex, we are not handling it above. This should be handled
+                        //        in a more general way.
+                        if (toolName === "autoaim" || toolDuration !== undefined) {
+                            activeTools.push(new TASTool.Tool(
+                                toolName,
+                                this.lineIndex,
+                                toolNameToken.start,
+                                this.tokens[this.lineIndex][this.tokenIndex - 1].end,
+                                toolDuration
+                            ));
+                        }
                     }
                 }
 
@@ -559,14 +561,16 @@ export class TASScript {
                 }
 
                 // Update `activeTools` with the new tool
-                activeTools.push(new TASTool.Tool(
-                    // TODO: No special case for "decel" tool?!
-                    toolName !== "decel" ? toolName : "(decel)",
-                    this.lineIndex,
-                    toolNameToken.start,
-                    this.tokens[this.lineIndex][this.tokenIndex - 2].end,
-                    toolDuration,
-                ));
+                // But only do it if the tool wants to be registered in the list of active tools
+                if (tool.registerActiveState) {
+                    activeTools.push(new TASTool.Tool(
+                        toolName,
+                        this.lineIndex,
+                        toolNameToken.start,
+                        this.tokens[this.lineIndex][this.tokenIndex - 2].end,
+                        toolDuration
+                    ));
+                }
             }
         }
     }
