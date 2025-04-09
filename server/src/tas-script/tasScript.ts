@@ -75,6 +75,12 @@ export class TASScript {
             const currentLine = this.tokens[this.lineIndex][0].line;
             const currentLineText = lines[currentLine];
 
+            /**
+             * Whether this line should be checked for unexpected tokens.
+             * This should usually be the case, but sometimes we wanna backtrack and not error check
+             */
+            let errorCheck = true;
+
             switch (state) {
                 // Try to accept `version <number>`, falling back to DEFAULT_VERSION
                 case ParserState.Version:
@@ -126,18 +132,29 @@ export class TASScript {
                     break;
                 // Try to accept `rngmanip <path>`
                 case ParserState.RngManip:
-                    const token = this.next("Expected framebulks or rngmanip");
-                    if (token === undefined) break;
+                    // Peek at the first token of the line
+                    const token = this.maybeNext();
 
-                    if (token.type === TokenType.String && token.text === "rngmanip") {
+                    // Check if rngmanip line is present
+                    if (token !== undefined && token.type === TokenType.String && token.text === "rngmanip") {
+                        // Process rngmanip line
+                        this.tokenIndex = 0; // Reset to re-parse line fully
+                        this.next("Expected rngmanip"); // Consume "rngmanip"
                         const count = this.acceptConsecutiveTokens();
                         if (count === 0) {
                             const lastToken = this.tokens[this.lineIndex][this.tokenIndex - 1];
                             DiagnosticCollector.addDiagnosticToLine(lastToken.line, lastToken.end, "Expected arguments");
                         }
+                        this.lines.set(currentLine, new ScriptLine(currentLineText, 0, false, LineType.RngManip, [], this.tokens[this.lineIndex]));
+                    } else if (token === undefined) {
+                        // Empty line or end of file, move to next
+                        this.tokenIndex = 0;
+                        this.lineIndex++;
                     } else {
                         this.lineIndex--;
+                        errorCheck = false;
                     }
+
                     state = ParserState.Framebulks;
                     break;
                 // Try to accept framebulks for the rest of the file
@@ -271,7 +288,7 @@ export class TASScript {
                     break;
             }
 
-            if (this.tokenIndex < this.tokens[this.lineIndex].length) {
+            if (errorCheck && this.tokenIndex < this.tokens[this.lineIndex].length) {
                 const lastToken = this.currentToken();
                 DiagnosticCollector.addDiagnosticToLine(lastToken.line, lastToken.start, "Unexpected tokens");
             }
