@@ -225,10 +225,11 @@ export namespace TASTool {
                     ]
                 },
                 { type: TokenType.Number, required: false },
+                { type: TokenType.String, required: false, description: "Specifies which algorithm to use for interpolation. Options are `cubic`, `exp`/`exponential`, `linear` or `sin`/`sine`. If omitted, `linear` is used." }
             ],
             expectsArguments: true,
             allowArbitraryArguments: false,
-            description: "**Syntax:** ```autoaim [ent] <x> <y> <z> [time]```\n\nThe Auto Aim tool will automatically aim towards a specified point in 3D space.\n\n**Example:** ```autoaim 0 0 0 20```",
+            description: "**Syntax:** ```autoaim [ent] <x> <y> <z> [time] [easing]```\n\nThe Auto Aim tool will automatically aim towards a specified point in 3D space.\n\n**Example:** ```autoaim 0 0 0 20```",
             index: 8,
         },
         look: {
