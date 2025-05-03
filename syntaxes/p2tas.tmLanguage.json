@@ -52,7 +52,7 @@
                 },
                 {
                     "name": "variable.parameter",
-                    "match": "\\b(?<=(.*(\\|[^\\|]*){4})|(.*>>.*))(on|off|none|vec|ang|veccam|max|keep|forward|forwardvel|up|down|left|right|nopitchlock|letspeedlock|pos|posepsilon|angepsilon|ent|ducked|blue|orange|spam|in|out)\\b"
+                    "match": "\\b(?<=(.*(\\|[^\\|]*){4})|(.*>>.*))(on|off|none|vec|ang|veccam|max|keep|forward|forwardvel|up|down|left|right|nopitchlock|letspeedlock|pos|posepsilon|angepsilon|ent|ducked|blue|orange|spam|in|out|toggle)\\b"
                 },
                 {
                     "name": "ups_or_deg",

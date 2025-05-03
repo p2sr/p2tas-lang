@@ -168,6 +168,7 @@ export namespace TASTool {
             arguments: [
                 { text: "in", type: TokenType.String, required: false, description: "Zooms in" },
                 { text: "out", type: TokenType.String, required: false, description: "Zooms out" },
+                { text: "toggle", type: TokenType.String, required: false, description: "Toggles zoom" }
             ],
             expectsArguments: true,
             allowArbitraryArguments: false,
