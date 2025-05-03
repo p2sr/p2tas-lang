@@ -423,51 +423,72 @@ connection.onRequest("p2tas/tickLine", (params: [any, number]) => {
 });
 
 /** Toggles the given line's tick type (absolute <=> relative) on request of the client. */
-connection.onRequest("p2tas/toggleLineTickType", (params: [any, number]) => {
-	const [uri, lineNumber] = params;
+connection.onRequest("p2tas/toggleLineTickType", (params: [any, number, number]) => {
+	const [uri, startLine, endLine] = params;
 
 	const script = documents.get(uri.external);
 	if (script === undefined) return "";
-	const line = script.lines.get(lineNumber);
-	if (line === undefined) return "";
+	
+	const modifiedLines: string[] = [];
+	
+	// Process each line in the range [startLine, endLine]
+	for (let lineNumber = startLine; lineNumber <= endLine; lineNumber++) {
+		const line = script.lines.get(lineNumber);
+		if (line === undefined) continue;
 
-	if (line.type !== LineType.Framebulk && line.type != LineType.ToolBulk) return line.lineText;
-
-	if (!line.isRelative) {
-		// Switch from absolute to relative
-		let previousLine: ScriptLine | undefined = undefined;
-		let prevLineNumber = lineNumber;
-
-		// Find the previous line
-		while (previousLine === undefined) {
-			prevLineNumber--;
-
-			if (prevLineNumber < 0) return line.lineText;
-
-			previousLine = script.lines.get(prevLineNumber)
+		// If the line isn't a framebulk nor a tool bulk, add the line to the output, unchanged.
+		if (line.type !== LineType.Framebulk && line.type !== LineType.ToolBulk) {
+			modifiedLines.push(line.lineText);
+			continue;
 		}
 
-		// If there is no previous line, then the requested line was the first line in the file
-		if ((previousLine!.type === LineType.Start || previousLine!.type === LineType.Version)) return line.lineText;
+		if (!line.isRelative) {
+			// Switch from absolute to relative
+			let previousLine: ScriptLine | undefined = undefined;
+			let prevLineNumber = lineNumber;
 
-		// Invalid line format
-		if (line.tokens[0].type !== TokenType.Number) return line.lineText;
+			// Find the previous line
+			while (previousLine === undefined && prevLineNumber > 0) {
+				prevLineNumber--;
+				previousLine = script.lines.get(prevLineNumber);
+			}
 
-		// Reformat the line to use the new tick format
-		const newTickSection = `+${line.tick - previousLine.tick}`;
-		//     everything before the number                      -|relative tick  -|everything after the tick
-		return `${line.lineText.substring(0, line.tokens[0].start)}${newTickSection}${line.lineText.substring(line.tokens[0].end).replace(/\r|\n/, "")}`;
+			// If there is no previous line, or it's a Start/Version line, keep original
+			if (!previousLine || previousLine.type === LineType.Start || previousLine.type === LineType.Version) {
+				modifiedLines.push(line.lineText);
+				continue;
+			}
+
+			// Invalid line format
+			if (line.tokens[0].type !== TokenType.Number) {
+				modifiedLines.push(line.lineText);
+				continue;
+			}
+
+			// Reformat the line to use the new tick format
+			const newTickSection = `+${line.tick - previousLine.tick}`;
+			//                 everything before the number                     -|relative tick  -|everything after the tick
+			const newLine = `${line.lineText.substring(0, line.tokens[0].start)}${newTickSection}${line.lineText.substring(line.tokens[0].end).replace(/\r|\n/, "")}`;
+			modifiedLines.push(newLine);
+		} else {
+			// Switch from relative to absolute
+			// Invalid line format
+			if (line.tokens[0].type !== TokenType.Plus || line.tokens[1].type !== TokenType.Number) {
+				modifiedLines.push(line.lineText);
+				continue;
+			}
+
+			// Reformat the line to use absolute tick
+			// We already have the absolute tick of every line parsed out, so we just need to reformat the line to use it
+			const newTickSection = `${line.tick}`;
+			//                 everything before the plus                       -|everything after the plus                                         -|absolute tick  -|everything after the tick                   (remove new line)
+			const newLine = `${line.lineText.substring(0, line.tokens[0].start)}${line.lineText.substring(line.tokens[0].end, line.tokens[1].start)}${newTickSection}${line.lineText.substring(line.tokens[1].end).replace(/\r|\n/, "")}`;
+			modifiedLines.push(newLine);
+		}
 	}
-	else {
-		// Switch from relative to absolute
-		// Invalid line format
-		if (line.tokens[0].type !== TokenType.Plus || line.tokens[1].type !== TokenType.Number) return line.lineText;
 
-		// We already have the absolute tick of every line parsed out, so we just need to reformat the line to use it
-		const newTickSection = `${line.tick}`;
-		//      everything before the plus                       -|everything after the plus                                         -|absolute tick  -|everything after the tick                    (remove new line)
-		return `${line.lineText.substring(0, line.tokens[0].start)}${line.lineText.substring(line.tokens[0].end, line.tokens[1].start)}${newTickSection}${line.lineText.substring(line.tokens[1].end).replace(/\r|\n/, "")}`;
-	}
+	// Return all modified lines as a string with newlines instead of array
+	return modifiedLines.join("\n");
 });
 
 // Make the text document manager listen on the connection for events
