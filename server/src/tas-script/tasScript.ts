@@ -386,7 +386,10 @@ export class TASScript {
     /** Parse tools and their arguments starting at `this.tokenIndex` and insert them into `activeTools`. */
     private parseToolsField(activeTools: TASTool.Tool[]) {
         while (this.tokens[this.lineIndex].length > this.tokenIndex) {
+            // Despite the name of this function, this checks if the CURRENT token is a semicolon.
+            // If it is, it isn't necessary to parse it.
             if (this.isNextType(TokenType.Semicolon)) continue;
+            // Now, the token index has been incremented (if it wasn't a semicolon)
 
             // Expect and verify the tool's name
             const toolName = this.expectText("Expected tool");
@@ -403,6 +406,11 @@ export class TASScript {
                 this.tokenIndex++;
                 continue;
             }
+
+            // If the next token IS a semicolon, but the above if statement still FAILS,
+            // the token index gets moved forward, breaking everything!!!!!!
+            // Move that shit back again.
+            if (this.tokens[this.lineIndex][this.tokenIndex - 1] !== toolNameToken) this.tokenIndex--;
 
             // Remove the tool from `activeTools` if it is already present, as we'll re-add it with updated parameters
             const toolIndex = activeTools.findIndex((val) => val.tool === toolName || val.tool === `(${toolName})`);
