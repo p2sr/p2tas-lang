@@ -139,14 +139,16 @@ export function activate(context: vscode.ExtensionContext) {
             return;
         };
 
-        const line = editor!.selection.active.line;
-        const oldLineText = editor!.document.lineAt(line).text;
+        const startLine = editor.selection.start.line;
+        const endLine = editor.selection.end.line;
+        const range = new vscode.Range(new vscode.Position(startLine, 0), new vscode.Position(endLine, editor.document.lineAt(endLine).text.length));
 
-        const newLineText: string = await client.sendRequest("p2tas/toggleLineTickType", [editor!.document.uri, line]);
-        if (newLineText === "" || newLineText === oldLineText) return;
+        const oldText = editor.document.getText(range);
+        const newText: string = await client.sendRequest("p2tas/toggleLineTickType", [editor.document.uri, startLine, endLine]);
+        if (newText === "" || newText === oldText) return;
 
         editor.edit(editBuilder => {
-            editBuilder.replace(new vscode.Range(new vscode.Position(line, 0), new vscode.Position(line, oldLineText.length)), newLineText);
+            editBuilder.replace(range, newText);
         });
     });
 
