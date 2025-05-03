@@ -2,7 +2,7 @@
     "name": "p2tas",
     "displayName": "Portal 2 TAS Tools",
     "description": "Syntax highlighting, snippets, autocompletion for the Portal 2 TASing script language",
-    "version": "1.4.2",
+    "version": "1.4.3",
     "publisher": "Portal2SpeedrunningHub",
     "icon": "images/logo128.png",
     "repository": {
