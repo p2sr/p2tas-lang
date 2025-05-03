@@ -16,6 +16,13 @@ Syntax highlighting, snippets and autocompletion for the Portal 2 TAS files, usi
 
 ## Release Notes
 
+### 1.4.3
+
+- Add support for version 8
+- Add support for toggling tick type on multiple lines at once
+- Add support for `autoaim` easing types
+- Various bugfixes related to some arguments complaining when they shouldn't
+
 ### 1.4.2
 
 - Add support for version 7
