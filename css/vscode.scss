@@ -190,6 +190,12 @@ input
                 cursor: not-allowed;
                 opacity: .1;
             }
+
+            &#start-button
+            {
+                height: 40px;
+                padding: .4rem;
+            }
         }
 
         img:not(#start-button):not([disabled=true]):hover

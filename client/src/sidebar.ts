@@ -88,23 +88,27 @@ export class TASSidebarProvider implements vscode.WebviewViewProvider {
         );
 
         const playUri = webview.asWebviewUri(
-            vscode.Uri.joinPath(this._extensionUri, "images", "play.svg")
+            vscode.Uri.joinPath(this._extensionUri, "images", "player/play.svg")
+        );
+
+        const playRawUri = webview.asWebviewUri(
+            vscode.Uri.joinPath(this._extensionUri, "images", "player/raw.svg")
         );
 
         const pauseUri = webview.asWebviewUri(
-            vscode.Uri.joinPath(this._extensionUri, "images", "pause.svg")
+            vscode.Uri.joinPath(this._extensionUri, "images", "player/pause.svg")
         );
 
         const stopUri = webview.asWebviewUri(
-            vscode.Uri.joinPath(this._extensionUri, "images", "stop.svg")
+            vscode.Uri.joinPath(this._extensionUri, "images", "player/stop.svg")
         );
 
         const replayUri = webview.asWebviewUri(
-            vscode.Uri.joinPath(this._extensionUri, "images", "replay.svg")
+            vscode.Uri.joinPath(this._extensionUri, "images", "player/restart.svg")
         );
 
         const nextTickUri = webview.asWebviewUri(
-            vscode.Uri.joinPath(this._extensionUri, "images", "next-tick.svg")
+            vscode.Uri.joinPath(this._extensionUri, "images", "player/step_over.svg")
         );
 
         const applyUri = webview.asWebviewUri(
@@ -146,7 +150,7 @@ export class TASSidebarProvider implements vscode.WebviewViewProvider {
             <div id="buttons">
                 <div id="play-buttons">
                     <img id="stop-button" src="${stopUri}" alt="Stop">
-                    <img id="raw-button" src="${playUri}" alt="Play raw">
+                    <img id="raw-button" src="${playRawUri}" alt="Play raw">
                     <!-- data-src-play and data-src-pause are used in the script to change the src of the image to the appropriate uri -->
                     <img id="start-button" class="heavy-button" src="${playUri}" alt="Play" data-src-play="${playUri}" data-src-pause="${pauseUri}">
                     <img id="replay-button" src="${replayUri}" alt="Replay">
