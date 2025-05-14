@@ -30,6 +30,11 @@ export class TASServer {
     currentTick = 0; // Only valid when active
     debugTick = -1;
 
+    // These values aren't set by default, but the values will be updated whenever changes are committed in the sidebar
+    skipToTick = undefined;
+    pauseAtTick = undefined;
+    skipPauseTickLinked = undefined;
+
     webView: TASSidebarProvider | undefined;
 
     constructor() {
@@ -42,6 +47,10 @@ export class TASServer {
         this.socket.connect(TASServer.port, TASServer.host, () => {
             vscode.window.showInformationMessage("Successfully connected to SAR!");
             this.connected = true;
+
+            // Sync skip and pause tick values
+            this.requestFastForward(this.skipToTick, this.skipPauseTickLinked);
+            if (!this.skipPauseTickLinked) this.requestNextPauseTick(this.pauseAtTick); // Only run this if skipto tick and pauseat tick are unlinked, otherwise we will break a perfectly good value by reassigning a possibly incorrect value to it
         });
         this.socket.on('error', () => vscode.window.showInformationMessage("Failed to connect to SAR."));
         this.socket.on('close', () => {
@@ -154,7 +163,7 @@ export class TASServer {
             return;
         this.socket.write(Buffer.alloc(1, 4));
     }
-    requestFastForward(tick: number, pause_after: boolean) {
+    requestFastForward(tick: number, pause_after: boolean) { // Skip to tick
         if (!this.checkSocket())
             return;
         var buf = Buffer.alloc(6, 5);
@@ -164,13 +173,16 @@ export class TASServer {
         else
             buf.writeUInt8(0, 5);
         this.socket.write(buf);
+        this.skipToTick = tick;
+        this.skipPauseTickLinked = pause_after;
     }
-    requestNextPauseTick(tick: number) {
+    requestNextPauseTick(tick: number) { // Pause at tick
         if (!this.checkSocket())
             return;
         var buf = Buffer.alloc(5, 6);
         buf.writeUInt32BE(tick, 1);
         this.socket.write(buf);
+        this.pauseAtTick = tick;
     }
     requestTickAdvance() {
         if (!this.checkSocket())
