@@ -290,12 +290,10 @@ function handleMessage(message) {
     if (!message.connected) {
         // Display server status
         dataStatusText.innerText = "Disconnected";
-        dataRateText.innerText = "N/A";
         dataTickText.innerText = "N/A";
 
         // Set status styling
         dataStatusText.style.color = "var(--vscode-charts-red)";
-        dataRateText.style.color = "var(--vscode-charts-lines)";
         dataTickText.style.color = "var(--vscode-charts-lines)";
     }
 
