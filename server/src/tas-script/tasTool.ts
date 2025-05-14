@@ -176,8 +176,8 @@ export namespace TASTool {
             index: 5
         },
         shoot: {
-            hasFixedOrder: true,
-            hasOff: false,
+            hasFixedOrder: false,
+            hasOff: true,
             registerActiveState: false,
             durationIndex: -1,
             arguments: [
