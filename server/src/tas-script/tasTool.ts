@@ -149,11 +149,15 @@ export namespace TASTool {
         },
         duck: {
             hasFixedOrder: true,
-            hasOff: false,
+            hasOff: true,
             registerActiveState: true,
             durationIndex: 0,
             arguments: [
-                { type: TokenType.Number, required: false }
+                {
+                    text: "on", type: TokenType.String, required: false, description: "Enables ```duck```.", otherwiseChildren: [
+                        { type: TokenType.Number, required: false }
+                    ]
+                }
             ],
             expectsArguments: false,
             allowArbitraryArguments: false,
