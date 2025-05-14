@@ -4,22 +4,18 @@
 const vscode = acquireVsCodeApi();
 
 const dataStatusText = document.querySelector("#data-status");
-const dataRateText = document.querySelector("#data-rate");
 const dataTickText = document.querySelector("#data-tick");
 
 const connectButton = document.querySelector("#connect-button");
 
 const buttonsDiv = document.querySelector("#buttons");
 
-const playButton = document.querySelector("#start-button");
 const stopButton = document.querySelector("#stop-button");
+const playRawButton = document.querySelector("#raw-button");
+const playButton = document.querySelector("#start-button");
 const replayButton = document.querySelector("#replay-button");
-
-const playbackHighlight = document.querySelector("#mode-select .highlight");
-const normalPlaybackButton = document.querySelector("#normal-playback");
-const rawPlaybackButton = document.querySelector("#raw-playback");
-
 const tickAdvanceButton = document.querySelector("#tick-advance-button");
+
 const rateButton = document.querySelector("#rate-button");
 const rateSlider = document.querySelector("#rate-input-slider");
 const rateBox = document.querySelector("#rate-input-text");
@@ -35,7 +31,6 @@ var confirmFieldChanges = true;
 
 // Runtime data
 let connected = false;
-let rawPlayback = false;
 let pauseatSkipLink = true;
 
 let playbackRate = rateBox.value;
@@ -53,9 +48,7 @@ connectButton.addEventListener('click', () => {
 playButton.addEventListener('click', () => {
     if (dataStatusText.innerText === "Inactive") {
         // Not playing, start a new playback
-        // Check whether to start a normal or raw playback
-        if (rawPlayback) vscode.postMessage({ type: 'playRawTAS' });
-        else vscode.postMessage({ type: 'playToolsTAS' });
+        vscode.postMessage({ type: 'playToolsTAS' });
     } else if (dataStatusText.innerText === "Playing") {
         // Playing, pause the playback
         vscode.postMessage({ type: 'pauseTAS' });
@@ -79,17 +72,13 @@ replayButton.addEventListener('click', () => {
     }
 });
 
-normalPlaybackButton.addEventListener('click', () => {
-    rawPlayback = false;
-    playbackHighlight.style.left = "";
-});
-
-rawPlaybackButton.addEventListener('click', () => {
-    rawPlayback = true;
-    playbackHighlight.style.left = "50%";
+playRawButton.addEventListener('click', () => {
+    if (playRawButton.getAttribute("disabled") === "true") return;
+    vscode.postMessage({ type: 'playRawTAS' });
 });
 
 tickAdvanceButton.addEventListener('click', () => {
+    if (tickAdvanceButton.getAttribute("disabled") === "true") return;
     vscode.postMessage({ type: 'tickAdvance' });
 });
 
@@ -250,7 +239,6 @@ function handleMessage(message) {
 
     // Display server status
     dataStatusText.innerText = message.state;
-    dataRateText.innerText = message.rate;
     dataTickText.innerText = message.currentTick;
 
     // Check message state
@@ -258,46 +246,42 @@ function handleMessage(message) {
         case "Inactive":
             setPlayImage(false);
 
-            tickAdvanceButton.disabled = true;
-            tickAdvanceButton.style.disabled = true;
+            playRawButton.setAttribute("disabled", false);
+            tickAdvanceButton.setAttribute("disabled", true);
 
             dataTickText.innerText = "N/A";
 
             dataStatusText.style.color = "var(--vscode-charts-lines)";
-            dataRateText.style.color = "";
             dataTickText.style.color = "var(--vscode-charts-lines)";
             break;
 
         case "Playing":
             setPlayImage(true);
 
-            tickAdvanceButton.disabled = true;
-            tickAdvanceButton.style.disabled = true;
+            playRawButton.setAttribute("disabled", true);
+            tickAdvanceButton.setAttribute("disabled", true);
 
             dataStatusText.style.color = "var(--vscode-charts-green)";
-            dataRateText.style.color = "";
             dataTickText.style.color = "";
             break;
 
         case "Paused":
             setPlayImage(false);
 
-            tickAdvanceButton.disabled = false;
-            tickAdvanceButton.style.disabled = false;
+            playRawButton.setAttribute("disabled", true);
+            tickAdvanceButton.setAttribute("disabled", false);
 
             dataStatusText.style.color = "var(--vscode-charts-yellow)";
-            dataRateText.style.color = "";
             dataTickText.style.color = "";
             break;
 
         case "Skipping":
             setPlayImage(true);
 
-            tickAdvanceButton.disabled = true;
-            tickAdvanceButton.style.disabled = true;
+            playRawButton.setAttribute("disabled", true);
+            tickAdvanceButton.setAttribute("disabled", true);
 
             dataStatusText.style.color = "var(--vscode-charts-blue)";
-            dataRateText.style.color = "";
             dataTickText.style.color = "";
             break;
     }
