@@ -59,6 +59,7 @@ $input-padding: 6px;
 $play-button-size: 30px;
 $play-button-spacing: 12px;
 $connect-button-size: 25px;
+$border-radius: 2px;
 
 // 1.2 Colors
 $foreground: var(--vscode-editor-foreground);
@@ -100,6 +101,7 @@ button
     color: $button-foreground;
     background: $button-background;
     border: none;
+    border-radius: $border-radius;
     outline: 1px solid transparent;
     outline-offset: 2px !important;
     text-align: center;
@@ -128,8 +130,16 @@ input
     padding: $input-padding;
     color: $input-foreground;
     background: $input-background;
+    accent-color: $button-background;
     border: none;
+    border-radius: $border-radius;
     font-family: $font;
+
+    &[type='range']
+    {
+        // Showing an outline on sliders when selected is kinda ugly
+        outline: none !important;
+    }
 }
 
 ::placeholder
@@ -321,10 +331,17 @@ input
         margin-left: 4px;
         padding: $input-padding;
         background: $button-background;
+        border-radius: $border-radius;
         outline: 1px solid transparent;
         outline-offset: 2px !important;
         transition: $transition;
         box-sizing: content-box;
+
+        &:hover
+        {
+            background: $hover;
+            cursor: pointer;
+        }
     }
 
     img.unchanged
