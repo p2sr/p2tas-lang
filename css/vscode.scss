@@ -45,9 +45,8 @@
         4.1 Connection data
         4.2 Buttons
             4.2.1 Media controls
-            4.2.2 Mode select
-            4.2.3 Playback rate
-            4.2.4 Tick control
+            4.2.2 Playback rate
+            4.2.3 Tick control
     5 Utility classes
  */
 
@@ -116,12 +115,6 @@ button
     {
         outline-color: $outline;
     }
-
-    &[disabled] // This gets toggled in the JS
-    {
-        background: $button-background-disabled;
-        cursor: not-allowed;
-    }
 }
 
 input
@@ -169,6 +162,7 @@ input
 // 4.2 Buttons
 #buttons
 {
+    display: flex;
     flex-direction: column;
     gap: $vertical-spacing;
 
@@ -186,50 +180,25 @@ input
             cursor: pointer;
             transition: $transition;
 
-            &:active
+            &:not([disabled=true]):active
             {
                 transform: scale(.9);
             }
+
+            &[disabled=true] // This gets toggled in the JS
+            {
+                cursor: not-allowed;
+                opacity: .1;
+            }
         }
 
-        img:not(#start-button):hover
+        img:not(#start-button):not([disabled=true]):hover
         {
             filter: brightness(.7);
         }
     }
 
-    // 4.2.2 Mode select
-    #mode-select
-    {
-        display: flex;
-        align-items: center;
-        position: relative;
-        padding: $input-padding;
-        background: $input-background;
-
-        .highlight
-        {
-            position: absolute;
-            top: $input-padding;
-            left: $input-padding;
-            width: calc(50% - #{$input-padding});
-            height: calc(100% - 2 * #{$input-padding});
-            background: $button-background;
-            transition: $transition;
-        }
-
-        span
-        {
-            width: 100%;
-            padding: $input-padding;
-            color: $button-foreground;
-            text-align: center;
-            cursor: pointer;
-            z-index: 0;
-        }
-    }
-
-    // 4.2.3 Playback rate
+    // 4.2.2 Playback rate
     #rate
     {
         display: flex;
@@ -249,7 +218,7 @@ input
         }
     }
 
-    // 4.2.4 Tick control
+    // 4.2.3 Tick control
     #tick-control
     {
         $vertical-spacing: $horizontal-spacing * 2; // Set different vertical spacing inside #tick-control
