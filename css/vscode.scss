@@ -55,7 +55,7 @@ $container-padding: 20px;
 $vertical-spacing: 20px;
 $horizontal-spacing: 4px;
 $input-padding: 6px;
-$play-button-size: 30px;
+$play-button-size: 11vw;
 $play-button-spacing: 12px;
 $connect-button-size: 25px;
 $border-radius: 2px;
@@ -177,6 +177,7 @@ input
         img
         {
             height: $play-button-size;
+            max-height: 40px;
             cursor: pointer;
             transition: $transition;
 
@@ -193,7 +194,8 @@ input
 
             &#start-button
             {
-                height: 40px;
+                height: 1.5 * $play-button-size;
+                max-height: 60px;
                 padding: .4rem;
             }
         }
