@@ -45,9 +45,8 @@
         4.1 Connection data
         4.2 Buttons
             4.2.1 Media controls
-            4.2.2 Mode select
-            4.2.3 Playback rate
-            4.2.4 Tick control
+            4.2.2 Playback rate
+            4.2.3 Tick control
     5 Utility classes
  */
 
@@ -56,9 +55,10 @@ $container-padding: 20px;
 $vertical-spacing: 20px;
 $horizontal-spacing: 4px;
 $input-padding: 6px;
-$play-button-size: 30px;
+$play-button-size: 11vw;
 $play-button-spacing: 12px;
 $connect-button-size: 25px;
+$border-radius: 2px;
 
 // 1.2 Colors
 $foreground: var(--vscode-editor-foreground);
@@ -100,6 +100,7 @@ button
     color: $button-foreground;
     background: $button-background;
     border: none;
+    border-radius: $border-radius;
     outline: 1px solid transparent;
     outline-offset: 2px !important;
     text-align: center;
@@ -114,12 +115,6 @@ button
     {
         outline-color: $outline;
     }
-
-    &[disabled] // This gets toggled in the JS
-    {
-        background: $button-background-disabled;
-        cursor: not-allowed;
-    }
 }
 
 input
@@ -128,8 +123,16 @@ input
     padding: $input-padding;
     color: $input-foreground;
     background: $input-background;
+    accent-color: $button-background;
     border: none;
+    border-radius: $border-radius;
     font-family: $font;
+
+    &[type='range']
+    {
+        // Showing an outline on sliders when selected is kinda ugly
+        outline: none !important;
+    }
 }
 
 ::placeholder
@@ -159,6 +162,7 @@ input
 // 4.2 Buttons
 #buttons
 {
+    display: flex;
     flex-direction: column;
     gap: $vertical-spacing;
 
@@ -173,53 +177,36 @@ input
         img
         {
             height: $play-button-size;
+            max-height: 40px;
             cursor: pointer;
             transition: $transition;
 
-            &:active
+            &:not([disabled=true]):active
             {
                 transform: scale(.9);
             }
+
+            &[disabled=true] // This gets toggled in the JS
+            {
+                cursor: not-allowed;
+                opacity: .1;
+            }
+
+            &#start-button
+            {
+                height: 1.5 * $play-button-size;
+                max-height: 60px;
+                padding: .4rem;
+            }
         }
 
-        img:not(#start-button):hover
+        img:not(#start-button):not([disabled=true]):hover
         {
             filter: brightness(.7);
         }
     }
 
-    // 4.2.2 Mode select
-    #mode-select
-    {
-        display: flex;
-        align-items: center;
-        position: relative;
-        padding: $input-padding;
-        background: $input-background;
-
-        .highlight
-        {
-            position: absolute;
-            top: $input-padding;
-            left: $input-padding;
-            width: calc(50% - #{$input-padding});
-            height: calc(100% - 2 * #{$input-padding});
-            background: $button-background;
-            transition: $transition;
-        }
-
-        span
-        {
-            width: 100%;
-            padding: $input-padding;
-            color: $button-foreground;
-            text-align: center;
-            cursor: pointer;
-            z-index: 0;
-        }
-    }
-
-    // 4.2.3 Playback rate
+    // 4.2.2 Playback rate
     #rate
     {
         display: flex;
@@ -239,7 +226,7 @@ input
         }
     }
 
-    // 4.2.4 Tick control
+    // 4.2.3 Tick control
     #tick-control
     {
         $vertical-spacing: $horizontal-spacing * 2; // Set different vertical spacing inside #tick-control
@@ -321,10 +308,17 @@ input
         margin-left: 4px;
         padding: $input-padding;
         background: $button-background;
+        border-radius: $border-radius;
         outline: 1px solid transparent;
         outline-offset: 2px !important;
         transition: $transition;
         box-sizing: content-box;
+
+        &:hover
+        {
+            background: $hover;
+            cursor: pointer;
+        }
     }
 
     img.unchanged
