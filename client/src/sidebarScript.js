@@ -246,6 +246,7 @@ function handleMessage(message) {
         case "Inactive":
             setPlayImage(false);
 
+            stopButton.setAttribute("disabled", true);
             playRawButton.setAttribute("disabled", false);
             tickAdvanceButton.setAttribute("disabled", true);
 
@@ -258,6 +259,7 @@ function handleMessage(message) {
         case "Playing":
             setPlayImage(true);
 
+            stopButton.setAttribute("disabled", false);
             playRawButton.setAttribute("disabled", true);
             tickAdvanceButton.setAttribute("disabled", true);
 
@@ -268,6 +270,7 @@ function handleMessage(message) {
         case "Paused":
             setPlayImage(false);
 
+            stopButton.setAttribute("disabled", false);
             playRawButton.setAttribute("disabled", true);
             tickAdvanceButton.setAttribute("disabled", false);
 
@@ -278,6 +281,7 @@ function handleMessage(message) {
         case "Skipping":
             setPlayImage(true);
 
+            stopButton.setAttribute("disabled", false);
             playRawButton.setAttribute("disabled", true);
             tickAdvanceButton.setAttribute("disabled", true);
 
