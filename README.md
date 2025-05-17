@@ -16,6 +16,12 @@ Syntax highlighting, snippets and autocompletion for the Portal 2 TAS files, usi
 
 ## Release Notes
 
+### 1.4.4
+
+- Improve sidebar UI
+- Fix some tools complaining about things that should be valid
+- Automatically sync *Playback rate*, *Skip to tick* and *Pause at tick* with the game when it connects
+
 ### 1.4.3
 
 - Add support for version 8
