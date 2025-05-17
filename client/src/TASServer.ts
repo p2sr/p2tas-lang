@@ -48,7 +48,8 @@ export class TASServer {
             vscode.window.showInformationMessage("Successfully connected to SAR!");
             this.connected = true;
 
-            // Sync skip and pause tick values
+            // Sync options with game
+            this.requestRatePlayback(this.playbackRate);
             this.requestFastForward(this.skipToTick, this.skipPauseTickLinked);
             if (!this.skipPauseTickLinked) this.requestNextPauseTick(this.pauseAtTick); // Only run this if skipto tick and pauseat tick are unlinked, otherwise we will break a perfectly good value by reassigning a possibly incorrect value to it
         });
