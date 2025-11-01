@@ -32,6 +32,7 @@ var confirmFieldChanges = true;
 // Runtime data
 let connected = false;
 let pauseatSkipLink = true;
+let rawPlayback = false;
 
 let playbackRate = rateBox.value;
 let skipToTick = skipBox.value;
@@ -48,6 +49,7 @@ connectButton.addEventListener('click', () => {
 playButton.addEventListener('click', () => {
     if (dataStatusText.innerText === "Inactive") {
         // Not playing, start a new playback
+        rawPlayback = false;
         vscode.postMessage({ type: 'playToolsTAS' });
     } else if (dataStatusText.innerText === "Playing") {
         // Playing, pause the playback
@@ -74,6 +76,7 @@ replayButton.addEventListener('click', () => {
 
 playRawButton.addEventListener('click', () => {
     if (playRawButton.getAttribute("disabled") === "true") return;
+    rawPlayback = true;
     vscode.postMessage({ type: 'playRawTAS' });
 });
 
