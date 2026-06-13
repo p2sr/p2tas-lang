@@ -16,6 +16,12 @@ Syntax highlighting, snippets and autocompletion for the Portal 2 TAS files, usi
 
 ## Release Notes
 
+### 1.4.5
+
+- Add support for version 9
+- Fix replay button not working
+- Add `stop` tool support to active tool hinting
+
 ### 1.4.4
 
 - Improve sidebar UI
