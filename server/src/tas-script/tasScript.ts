@@ -23,7 +23,7 @@ enum ParserState {
  */
 export class TASScript {
     /** Default assumed script version */
-    readonly DEFAULT_VERSION = 8;
+    readonly DEFAULT_VERSION = 9;
 
     fileText = "";
 
@@ -86,7 +86,7 @@ export class TASScript {
                 case ParserState.Version:
                     // Make sure a valid version is provided
                     this.expectText("Expected version", "version");
-                    this.scriptVersion = this.expectNumber("Invalid version", 1, 2, 3, 4, 5, 6, 7, 8) ?? this.DEFAULT_VERSION;
+                    this.scriptVersion = this.expectNumber("Invalid version", 1, 2, 3, 4, 5, 6, 7, 8, 9) ?? this.DEFAULT_VERSION;
                     this.expectCount("Ignored parameters", 2);
 
                     this.lines.set(currentLine, new ScriptLine(currentLineText, 0, false, LineType.Version, [], this.tokens[this.lineIndex]));
@@ -418,8 +418,9 @@ export class TASScript {
 
             const tool = TASTool.tools[toolName];
             const firstArgument = this.tokens[this.lineIndex][this.tokenIndex];
-            // If the tool has an "off" argument, it should be the first and only argument given to the tool
-            if (tool.hasOff && firstArgument.type === TokenType.String && firstArgument.text === "off") {
+            // If the tool has an "off" argument, it should be the first and only argument given to the tool,
+            // unless tool can function without parameters
+            if (tool.hasOff && firstArgument != undefined && firstArgument.type === TokenType.String && firstArgument.text === "off") {
                 this.tokenIndex++;
                 if (this.tokenIndex >= this.tokens[this.lineIndex].length) return;
                 // Consume everything up to the next semicolon if there are more arguments after the "off" argument

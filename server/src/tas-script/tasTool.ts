@@ -106,10 +106,26 @@ export namespace TASTool {
                         { type: TokenType.Number, required: true },
                     ]
                 },
+                {
+                    text: "vel", type: TokenType.String, required: false, children: [
+                        { type: TokenType.String, required: true, description: "Velocity components to check: `x`, `y`, `z`, `xy`, `xz`, `yz`, or `xyz`" },
+                        { type: TokenType.Number, required: true },
+                    ]
+                },
+                {
+                    text: "velepsilon", type: TokenType.String, required: false, children: [
+                        { type: TokenType.Number, required: true },
+                    ]
+                },
+                {
+                    text: "holding", type: TokenType.String, required: false, children: [
+                        { type: TokenType.String, required: false, description: "Optional entity selector to check for a specific held prop" },
+                    ]
+                },
             ],
             expectsArguments: true,
             allowArbitraryArguments: false,
-            description: "**Syntax:** ```check [pos x y z] [ang pitch yaw] [posepsilon val] [angepsilon val]```\n\nThe check tool accepts a target position and angle, and a precision value (posepsilon (default: 0.5), angepsilon (default: 0.2)). **Before** the tick it is on, it will check whether the player position is close to (meaning \"within posepsilon / angepsilon units\") the target position, and if not, replay the active script. It will do this a maximum of ```sar_tas_check_max_replays``` (default 15) times.\n\n**Example:** ```check pos 100 250 312.7```",
+            description: "**Syntax:** ```check [pos x y z] [ang pitch yaw] [posepsilon val] [angepsilon val] [vel components val] [velepsilon val] [holding entity_name]```\n\nThe check tool accepts a target position and angle, and a precision value (posepsilon (default: 0.5), angepsilon (default: 0.2)). **Before** the tick it is on, it will check whether the player position is close to (meaning \"within posepsilon / angepsilon units\") the target position, and if not, replay the active script. It will do this a maximum of ```sar_tas_check_max_replays``` (default 15) times.\n\n**Example:** ```check pos 100 250 312.7```",
             index: 0,
         },
         cmd: {
@@ -128,23 +144,38 @@ export namespace TASTool {
             hasOff: false,
             registerActiveState: false,
             durationIndex: -1,
-            arguments: [],
+            arguments: [
+                { text: "movement", type: TokenType.String, required: false },
+                { text: "moving", type: TokenType.String, required: false },
+                { text: "move", type: TokenType.String, required: false },
+                { text: "viewangles", type: TokenType.String, required: false },
+                { text: "angles", type: TokenType.String, required: false },
+                { text: "ang", type: TokenType.String, required: false },
+                { text: "looking", type: TokenType.String, required: false },
+                { text: "look", type: TokenType.String, required: false },
+                { text: "buttons", type: TokenType.String, required: false },
+                { text: "inputs", type: TokenType.String, required: false },
+                { text: "pressing", type: TokenType.String, required: false },
+                { text: "press", type: TokenType.String, required: false },
+                { text: "all", type: TokenType.String, required: false },
+                { text: "everything", type: TokenType.String, required: false },
+            ],
             expectsArguments: false,
             allowArbitraryArguments: false,
-            description: "**Syntax:** ```stop```\n\nStops every tool activated prior to given tick.\n\n**Example:** ```stop```",
+            description: "**Syntax:** ```stop [types]```\n\nStops all tools activated in prior tickbulks. Optionally accepts type parameters to stop only tools of a given type.\n\n**Example:** ```stop movement```",
             index: 2
         },
         use: {
             hasFixedOrder: true,
-            hasOff: false,
+            hasOff: true,
             registerActiveState: false,
             durationIndex: -1,
             arguments: [
-                { text: "spam", type: TokenType.String, required: false, description: "Spams ```+use``` every other tick" },
+                { text: "spam", type: TokenType.String, required: false, description: "Spams ```+use``` every other tick until disabled with `off`" },
             ],
             expectsArguments: false,
             allowArbitraryArguments: false,
-            description: "**Syntax:** ```use [spam]```\n\nPresses the ```+use``` input. It also has an option for spamming, which will spam +use every other tick.\n\n**Example:** ```use spam```",
+            description: "**Syntax:** ```use [spam/off]```\n\nPresses the ```+use``` input once. Passing `spam` will spam +use every other tick until disabled with `off`.\n\n**Example:** ```use spam```",
             index: 3
         },
         duck: {
@@ -187,23 +218,30 @@ export namespace TASTool {
             arguments: [
                 { text: "blue", type: TokenType.String, required: false, description: "Shoots the blue portal" },
                 { text: "orange", type: TokenType.String, required: false, description: "Shoots the orange portal" },
-                { text: "spam", type: TokenType.String, required: false, description: "Automates spamming, automatically detecting the portal gun's cooldown" },
+                { text: "hold", type: TokenType.String, required: false, description: "Holds the shoot input until disabled with `off`" },
+                { text: "spam", type: TokenType.String, required: false, description: "Spams the shoot input with respect to the portal gun's fire delay until disabled with `off`" },
             ],
             expectsArguments: true,
             allowArbitraryArguments: false,
-            description: "**Syntax:** ```shoot [portal]```\n\nUsed to shoot portals. Can automate spamming with the ```spam``` property, which will automatically detect the portal gun's cooldown.\n\n**Example:** ```shoot blue```",
+            description: "**Syntax:** ```shoot <blue/orange> [hold] [spam]```\n\nUsed to shoot portals. Can automate spamming with the ```spam``` property, which will automatically detect the portal gun's cooldown.\n\n**Example:** ```shoot blue```",
             index: 6
         },
         setang: {
             hasFixedOrder: true,
-            hasOff: false,
+            hasOff: true,
             registerActiveState: true,
-            durationIndex: 3,
+            durationIndex: -1,
             arguments: [
-                { type: TokenType.Number, required: true },
-                { type: TokenType.Number, required: true },
-                { type: TokenType.Number, required: false },
-                { type: TokenType.String, required: false, description: "Easing type for the setang among: `cubic`, `exp`/`exponential`, `linear` or `sin`/`sine`" },
+                {
+                    text: "ahead", type: TokenType.String, required: false,
+                    description: "Looks towards the current direction of movement",
+                    otherwiseChildren: [
+                        { type: TokenType.Number, required: true, description: "Pitch angle" },
+                        { type: TokenType.Number, required: true, description: "Yaw angle" },
+                    ]
+                },
+                { type: TokenType.Number, required: false, description: "Interpolation time in ticks" },
+                { type: TokenType.String, required: false, description: "Easing type" },
             ],
             expectsArguments: true,
             allowArbitraryArguments: false,
@@ -262,6 +300,21 @@ export namespace TASTool {
             description: "**Syntax:** ```look <pitch> <yaw> [time]```\n\nCan be used to control the view analog. It also accepts additional parameters, like word-based directions or time.\n\n**Example:** ```look 10deg 173deg 10```",
             index: 9
         },
+        jump: {
+            hasFixedOrder: true,
+            hasOff: false,
+            registerActiveState: false,
+            durationIndex: -1,
+            arguments: [
+                { text: "duck", type: TokenType.String, required: false, description: "Jumps while also ducking. Ducking slightly increases your jump height." },
+                { text: "ducked", type: TokenType.String, required: false, description: "Jumps while also ducking. Ducking slightly increases your jump height." },
+                { text: "unducked", type: TokenType.String, required: false, description: "Jumps without ducking." },
+            ],
+            expectsArguments: false,
+            allowArbitraryArguments: false,
+            description: "**Syntax:** ```jump [duck|ducked]```\n\nCan be used to execute single-tick jump input. Equivalent of using button tickbulk\n\n**Example:** ```jump ducked```",
+            index: 10,
+        },
         autojump: {
             hasFixedOrder: true,
             hasOff: true,
@@ -271,11 +324,12 @@ export namespace TASTool {
                 { text: "on", type: TokenType.String, required: false, description: "Enables ```autojump```." },
                 { text: "duck", type: TokenType.String, required: false, description: "Enables ```autojump``` while also ducking. Ducking slightly increases your jump height." },
                 { text: "ducked", type: TokenType.String, required: false, description: "Enables ```autojump``` while also ducking. Ducking slightly increases your jump height." },
+                { text: "unducked", type: TokenType.String, required: false, description: "Enables ```autojump``` without ducking." },
             ],
             expectsArguments: true,
             allowArbitraryArguments: false,
-            description: "**Syntax:** ```autojump [on|duck|ducked]```\n\nAnything other than ```on```, ```duck``` or ```ducked``` will disable the tool.\n\nAutojump tool will change the jump button state depending on whether the player is grounded or not, resulting in automatically jumping on the earliest contact with a ground.\n\n**Example:** ```autojump on```",
-            index: 10,
+            description: "**Syntax:** ```autojump [on|duck|ducked|unducked]```\n\nAutojump tool will change the jump button state depending on whether the player is grounded or not, resulting in automatically jumping on the earliest contact with a ground.\n\n**Example:** ```autojump on```",
+            index: 11,
         },
         absmov: {
             hasFixedOrder: true,
@@ -289,7 +343,7 @@ export namespace TASTool {
             expectsArguments: true,
             allowArbitraryArguments: false,
             description: "**Syntax:** ```absmov <angle> [strength]```\n\nAbsolute movement tool will generate movement values depending on the absolute move direction you provide in degrees. Giving off as an argument will disable the tool. The strength parameter must be between 0 and 1 (default) and controls how fast the player will move.\n\n**Example:** ```absmov 90 0.5```",
-            index: 11,
+            index: 12,
         },
         move: {
             hasFixedOrder: true,
@@ -312,7 +366,7 @@ export namespace TASTool {
             expectsArguments: true,
             allowArbitraryArguments: false,
             description: "**Syntax:** ```move <direction> [scale]```\n\nControls the movement analog. Can accept 1-2 direction parameters, as well as word-based parameters.\n\n**Example:** ```move forward left```",
-            index: 12
+            index: 13
         },
         strafe: {
             hasFixedOrder: false,
@@ -331,13 +385,18 @@ export namespace TASTool {
                 { text: "right", type: TokenType.String, required: false, description: "Autostrafer will try to strafe right." },
                 { text: "nopitchlock", type: TokenType.String, required: false, description: "Make the autostrafer not clamp the pitch. The autostrafer will always clamp your pitch angle (up and down) between -30 and 30 when midair, as it gives the fastest possible acceleration (forward movement is being scaled by a cosine of that angle while being airborne). This argument will tell the autostrafer that you wish to enable sub-optimal strafing (this is useful when you need to hit a shot while strafing for example)." },
                 { text: "letspeedlock", type: TokenType.String, required: false, description: "Let the autostrafer speedlock. This option only exists from version 4 onwards and mimics old behavior." },
-                { type: TokenType.Number, unit: "ups", required: false },
-                { type: TokenType.Number, unit: "deg", required: false },
+                { type: TokenType.Number, unit: "ups", required: false, description: "Target horizontal velocity in units per second" },
+                { type: TokenType.Number, unit: "deg", required: false, description: "Target direction angle in degrees" },
+                { type: TokenType.Number, unit: "usdeg", required: false, description: "Understrafe offset in degrees — brings movement vector closer to velocity vector for a weaker turn" },
+                { type: TokenType.Number, unit: "osdeg", required: false, description: "Overstrafe offset in degrees — brings movement vector further from velocity vector for a bigger turn" },
+                { type: TokenType.Number, unit: "us", required: false, description: "Understrafe scalar (1us = closest direction yielding no acceleration)" },
+                { type: TokenType.Number, unit: "os", required: false, description: "Overstrafe scalar (1os = closest direction yielding no acceleration)" },
+                { type: TokenType.Number, required: false, description: "Input strength — movement input vector is scaled by this value" },
             ],
             expectsArguments: true,
             allowArbitraryArguments: false,
             description: "**Syntax:** ```strafe [parameters]```\n\nThe strafe tool will adjust player input to get a different kind of strafing depending on parameters.\n\n**Example:** ```strafe 299.999ups left veccam```",
-            index: 13,
+            index: 14,
         },
         decel: {
             hasFixedOrder: true,
@@ -350,7 +409,7 @@ export namespace TASTool {
             expectsArguments: true,
             allowArbitraryArguments: false,
             description: "**Syntax:** ```decel <speed>```\n\nThe decelaration tool will slow down as quickly as possible to the given speed.\n\n**Example:** ```decel 100```",
-            index: 14,
+            index: 15,
         }
     };
 }

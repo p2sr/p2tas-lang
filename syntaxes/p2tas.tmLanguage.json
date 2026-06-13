@@ -48,15 +48,15 @@
             "patterns": [
                 {
                     "name": "keyword.other.tools_args",
-                    "match": "\\b(?<=(.*(\\|[^\\|]*){4})|(.*>>.*))(strafe|autojump|absmov|setang|autoaim|decel|check|shoot|zoom|duck|use|stop|look|move|cmd)\\b"
+                    "match": "\\b(?<=(.*(\\|[^\\|]*){4})|(.*>>.*))(strafe|jump|autojump|absmov|setang|autoaim|decel|check|shoot|zoom|duck|use|stop|look|move|cmd)\\b"
                 },
                 {
                     "name": "variable.parameter",
-                    "match": "\\b(?<=(.*(\\|[^\\|]*){4})|(.*>>.*))(on|off|none|vec|ang|veccam|max|keep|forward|forwardvel|up|down|left|right|nopitchlock|letspeedlock|pos|posepsilon|angepsilon|ent|ducked|blue|orange|spam|in|out|toggle)\\b"
+                    "match": "\\b(?<=(.*(\\|[^\\|]*){4})|(.*>>.*))(on|off|none|vec|ang|veccam|max|keep|forward|forwardvel|up|down|left|right|ahead|nopitchlock|letspeedlock|pos|posepsilon|angepsilon|ent|ducked|unducked|blue|orange|spam|in|out|toggle|movement|moving|viewangles|angles|looking|inputs|pressing|all|everything|buttons)\\b"
                 },
                 {
                     "name": "ups_or_deg",
-                    "match": "\\b\\d+(.\\d*)?(ups|deg)\\b",
+                    "match": "\\b\\d+(.\\d*)?(ups|deg|usdeg|osdeg|us|os)\\b",
                     "captures": {
                         "2": {"name": "variable.parameter"}
                     }
