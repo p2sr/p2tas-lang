@@ -18,8 +18,28 @@ export namespace TASTool {
         }
     }
 
+    export enum ActiveUsageType {
+        None,
+        Manual,
+        Duration,
+    }
+
+    export enum BulkType {
+        Movement = 1 << 0,
+        ViewAngles = 1 << 1,
+        Buttons = 1 << 2,
+        Commands = 1 << 3,
+        Meta = 1 << 4,
+        All = (Movement | ViewAngles | Buttons | Commands | Meta)
+    }
+
+    export enum MetaToolType {
+        Stop
+    }
+
     interface ToolDefinition {
         [name: string]: {
+            readonly bulkType: BulkType,
             /**  Whether the arguments of this tool have a fixed order. */
             readonly hasFixedOrder: boolean,
             /**
@@ -27,17 +47,14 @@ export namespace TASTool {
              * appear on its own and should not be suggested if other arguments are present.
              */
             readonly hasOff: boolean,
+            readonly metaToolType?: MetaToolType,
             /**
              * Whether this tool should be added to the list of running tools when it is activated.
-             * If set to `false`, never adds the tool to the list of active tools.
-             * This is useful for tools that only do an action at one point in time as opposed to running a lasting effect.
+             * If set to `None`, never adds the tool to the list of active tools. (tool executes once without lasting effects)
+             * If set to `Manual`, tool is added to a list, and then removed when "off" argument or "stop" tool is used.
+             * If set to `Duration`, acts like `Manual`, but can also be removed when duration specified by an argument is passed.
              */
-            readonly registerActiveState: boolean,
-            /**
-             * The index of the argument in `arguments` that defines for how long the tool runs.
-             * If set to `-1`, marks the tool as running forever (or until manually turned off)
-             */
-            readonly durationIndex: number,
+            readonly activeUsageType: ActiveUsageType,
             readonly arguments: ToolArgument[],
             readonly expectsArguments: boolean,
             /**
@@ -64,6 +81,19 @@ export namespace TASTool {
             readonly unit?: string,
             readonly description?: string,
             /**
+             * If set, overrides tool's active usage type. 
+             * Can be used to set up optional active usage or to create "off" alias.
+             */
+            readonly activeUsageTypeOverride?: ActiveUsageType,
+            /**
+             * Is the argument defining how long its tool runs.
+             */
+            readonly isDuration?: boolean,
+            /**
+             * Custom payload that can be used by meta parameters
+             */
+            readonly customPayload?: any,
+            /**
              * The arguments that need to be present if this argument is used (e.g. when a tool
              * takes a keyword and a "parameter" for the keyword, as in "autoaim ent <entity>")
              */
@@ -78,10 +108,10 @@ export namespace TASTool {
 
     export const tools: ToolDefinition = {
         check: {
+            bulkType: BulkType.Meta,
             hasFixedOrder: true,
             hasOff: false,
-            registerActiveState: false,
-            durationIndex: -1,
+            activeUsageType: ActiveUsageType.None,
             arguments: [
                 {
                     text: "pos", type: TokenType.String, required: false, children: [
@@ -129,10 +159,10 @@ export namespace TASTool {
             index: 0,
         },
         cmd: {
+            bulkType: BulkType.Commands,
             hasFixedOrder: false,
             hasOff: false,
-            registerActiveState: false,
-            durationIndex: -1,
+            activeUsageType: ActiveUsageType.None,
             arguments: [],
             expectsArguments: true,
             allowArbitraryArguments: true,
@@ -140,25 +170,26 @@ export namespace TASTool {
             index: 1
         },
         stop: {
+            metaToolType: MetaToolType.Stop,
+            bulkType: BulkType.Meta,
             hasFixedOrder: false,
             hasOff: false,
-            registerActiveState: false,
-            durationIndex: -1,
+            activeUsageType: ActiveUsageType.None,
             arguments: [
-                { text: "movement", type: TokenType.String, required: false },
-                { text: "moving", type: TokenType.String, required: false },
-                { text: "move", type: TokenType.String, required: false },
-                { text: "viewangles", type: TokenType.String, required: false },
-                { text: "angles", type: TokenType.String, required: false },
-                { text: "ang", type: TokenType.String, required: false },
-                { text: "looking", type: TokenType.String, required: false },
-                { text: "look", type: TokenType.String, required: false },
-                { text: "buttons", type: TokenType.String, required: false },
-                { text: "inputs", type: TokenType.String, required: false },
-                { text: "pressing", type: TokenType.String, required: false },
-                { text: "press", type: TokenType.String, required: false },
-                { text: "all", type: TokenType.String, required: false },
-                { text: "everything", type: TokenType.String, required: false },
+                { text: "movement", type: TokenType.String, required: false, customPayload: BulkType.Movement },
+                { text: "moving", type: TokenType.String, required: false, customPayload: BulkType.Movement },
+                { text: "move", type: TokenType.String, required: false, customPayload: BulkType.Movement },
+                { text: "viewangles", type: TokenType.String, required: false, customPayload: BulkType.ViewAngles },
+                { text: "angles", type: TokenType.String, required: false, customPayload: BulkType.ViewAngles },
+                { text: "ang", type: TokenType.String, required: false, customPayload: BulkType.ViewAngles },
+                { text: "looking", type: TokenType.String, required: false, customPayload: BulkType.ViewAngles },
+                { text: "look", type: TokenType.String, required: false, customPayload: BulkType.ViewAngles },
+                { text: "buttons", type: TokenType.String, required: false, customPayload: BulkType.Buttons },
+                { text: "inputs", type: TokenType.String, required: false, customPayload: BulkType.Buttons },
+                { text: "pressing", type: TokenType.String, required: false, customPayload: BulkType.Buttons },
+                { text: "press", type: TokenType.String, required: false, customPayload: BulkType.Buttons },
+                { text: "all", type: TokenType.String, required: false, customPayload: BulkType.All },
+                { text: "everything", type: TokenType.String, required: false, customPayload: BulkType.All },
             ],
             expectsArguments: false,
             allowArbitraryArguments: false,
@@ -166,12 +197,12 @@ export namespace TASTool {
             index: 2
         },
         use: {
+            bulkType: BulkType.Buttons,
             hasFixedOrder: true,
             hasOff: true,
-            registerActiveState: false,
-            durationIndex: -1,
+            activeUsageType: ActiveUsageType.None,
             arguments: [
-                { text: "spam", type: TokenType.String, required: false, description: "Spams ```+use``` every other tick until disabled with `off`" },
+                { text: "spam", type: TokenType.String, required: false, activeUsageTypeOverride: ActiveUsageType.Manual, description: "Spams ```+use``` every other tick until disabled with `off`"},
             ],
             expectsArguments: false,
             allowArbitraryArguments: false,
@@ -179,14 +210,14 @@ export namespace TASTool {
             index: 3
         },
         duck: {
+            bulkType: BulkType.Buttons,
             hasFixedOrder: true,
             hasOff: true,
-            registerActiveState: true,
-            durationIndex: 0,
+            activeUsageType: ActiveUsageType.None,
             arguments: [
                 {
                     text: "on", type: TokenType.String, required: false, description: "Enables ```duck```.", otherwiseChildren: [
-                        { type: TokenType.Number, required: false }
+                        { type: TokenType.Number, required: false, isDuration: true, activeUsageTypeOverride: ActiveUsageType.Duration }
                     ]
                 }
             ],
@@ -196,10 +227,10 @@ export namespace TASTool {
             index: 4
         },
         zoom: {
+            bulkType: BulkType.Buttons,
             hasFixedOrder: true,
             hasOff: false,
-            registerActiveState: false,
-            durationIndex: -1,
+            activeUsageType: ActiveUsageType.None,
             arguments: [
                 { text: "in", type: TokenType.String, required: false, description: "Zooms in" },
                 { text: "out", type: TokenType.String, required: false, description: "Zooms out" },
@@ -211,15 +242,15 @@ export namespace TASTool {
             index: 5
         },
         shoot: {
+            bulkType: BulkType.Buttons,
             hasFixedOrder: false,
             hasOff: true,
-            registerActiveState: false,
-            durationIndex: -1,
+            activeUsageType: ActiveUsageType.None,
             arguments: [
                 { text: "blue", type: TokenType.String, required: false, description: "Shoots the blue portal" },
                 { text: "orange", type: TokenType.String, required: false, description: "Shoots the orange portal" },
-                { text: "hold", type: TokenType.String, required: false, description: "Holds the shoot input until disabled with `off`" },
-                { text: "spam", type: TokenType.String, required: false, description: "Spams the shoot input with respect to the portal gun's fire delay until disabled with `off`" },
+                { text: "hold", type: TokenType.String, required: false, activeUsageTypeOverride: ActiveUsageType.Manual, description: "Holds the shoot input until disabled with `off`" },
+                { text: "spam", type: TokenType.String, required: false, activeUsageTypeOverride: ActiveUsageType.Manual, description: "Spams the shoot input with respect to the portal gun's fire delay until disabled with `off`" },
             ],
             expectsArguments: true,
             allowArbitraryArguments: false,
@@ -227,10 +258,10 @@ export namespace TASTool {
             index: 6
         },
         setang: {
+            bulkType: BulkType.ViewAngles,
             hasFixedOrder: true,
             hasOff: true,
-            registerActiveState: true,
-            durationIndex: -1,
+            activeUsageType: ActiveUsageType.Duration,
             arguments: [
                 {
                     text: "ahead", type: TokenType.String, required: false,
@@ -240,7 +271,7 @@ export namespace TASTool {
                         { type: TokenType.Number, required: true, description: "Yaw angle" },
                     ]
                 },
-                { type: TokenType.Number, required: false, description: "Interpolation time in ticks" },
+                { type: TokenType.Number, required: false, description: "Interpolation time in ticks", isDuration: true },
                 { type: TokenType.String, required: false, description: "Easing type" },
             ],
             expectsArguments: true,
@@ -249,10 +280,10 @@ export namespace TASTool {
             index: 7,
         },
         autoaim: {
+            bulkType: BulkType.ViewAngles,
             hasFixedOrder: true,
             hasOff: true,
-            registerActiveState: true,
-            durationIndex: 3,
+            activeUsageType: ActiveUsageType.Manual,
             arguments: [
                 {
                     type: TokenType.String, text: "ent", required: false, children: [
@@ -267,7 +298,7 @@ export namespace TASTool {
                         { type: TokenType.Number, required: true },
                     ]
                 },
-                { type: TokenType.Number, required: false },
+                { type: TokenType.Number, required: false, isDuration: true, description: "Easing time in ticks"},
                 { type: TokenType.String, required: false, description: "Specifies which algorithm to use for interpolation. Options are `cubic`, `exp`/`exponential`, `linear` or `sin`/`sine`. If omitted, `linear` is used." }
             ],
             expectsArguments: true,
@@ -276,13 +307,13 @@ export namespace TASTool {
             index: 8,
         },
         look: {
+            bulkType: BulkType.ViewAngles,
             hasFixedOrder: true,
             hasOff: true,
-            registerActiveState: true,
-            durationIndex: 1,
+            activeUsageType: ActiveUsageType.Duration,
             arguments: [
                 {
-                    text: "stop", type: TokenType.String, required: false, otherwiseChildren: [
+                    text: "stop", activeUsageTypeOverride: ActiveUsageType.None, type: TokenType.String, required: false, otherwiseChildren: [
                         {
                             type: TokenType.Number, unit: "deg", required: false, children: [
                                 { type: TokenType.Number, unit: "deg", required: true }
@@ -293,7 +324,7 @@ export namespace TASTool {
                         }
                     ]
                 },
-                { type: TokenType.Number, required: false, description: "Look duration, in ticks" }
+                { type: TokenType.Number, required: false, description: "Look duration, in ticks", isDuration: true }
             ],
             expectsArguments: true,
             allowArbitraryArguments: false,
@@ -301,10 +332,10 @@ export namespace TASTool {
             index: 9
         },
         jump: {
+            bulkType: BulkType.Buttons,
             hasFixedOrder: true,
             hasOff: false,
-            registerActiveState: false,
-            durationIndex: -1,
+            activeUsageType: ActiveUsageType.None,
             arguments: [
                 { text: "duck", type: TokenType.String, required: false, description: "Jumps while also ducking. Ducking slightly increases your jump height." },
                 { text: "ducked", type: TokenType.String, required: false, description: "Jumps while also ducking. Ducking slightly increases your jump height." },
@@ -316,10 +347,10 @@ export namespace TASTool {
             index: 10,
         },
         autojump: {
+            bulkType: BulkType.Buttons,
             hasFixedOrder: true,
             hasOff: true,
-            registerActiveState: true,
-            durationIndex: -1,
+            activeUsageType: ActiveUsageType.Manual,
             arguments: [
                 { text: "on", type: TokenType.String, required: false, description: "Enables ```autojump```." },
                 { text: "duck", type: TokenType.String, required: false, description: "Enables ```autojump``` while also ducking. Ducking slightly increases your jump height." },
@@ -332,10 +363,10 @@ export namespace TASTool {
             index: 11,
         },
         absmov: {
+            bulkType: BulkType.Movement,
             hasFixedOrder: true,
             hasOff: true,
-            registerActiveState: true,
-            durationIndex: -1,
+            activeUsageType: ActiveUsageType.Manual,
             arguments: [
                 { type: TokenType.Number, unit: "deg?", required: false },
                 { type: TokenType.Number, required: false },
@@ -346,13 +377,13 @@ export namespace TASTool {
             index: 12,
         },
         move: {
+            bulkType: BulkType.Movement,
             hasFixedOrder: true,
             hasOff: true,
-            registerActiveState: true,
-            durationIndex: -1,
+            activeUsageType: ActiveUsageType.Manual,
             arguments: [
                 {
-                    text: "stop", type: TokenType.String, required: false, otherwiseChildren: [
+                    text: "stop", activeUsageTypeOverride: ActiveUsageType.None, type: TokenType.String, required: false, otherwiseChildren: [
                         {
                             type: TokenType.Number, unit: "deg", required: false, otherwiseChildren: [
                                 { type: TokenType.String, required: true },
@@ -369,10 +400,10 @@ export namespace TASTool {
             index: 13
         },
         strafe: {
+            bulkType: BulkType.Movement,
             hasFixedOrder: false,
             hasOff: true,
-            registerActiveState: true,
-            durationIndex: -1,
+            activeUsageType: ActiveUsageType.Manual,
             arguments: [
                 { text: "vec", type: TokenType.String, required: false, description: "Enables vectorial strafing (movement analog is adjusted to get desired movement direction). (default)" },
                 { text: "ang", type: TokenType.String, required: false, description: "Enables angular strafing (view analog is adjusted to get desired movement direction). This isn't particularly recommended as it doesn't look appealing, however it is the only effective strafing type while on velocity gel." },
@@ -399,10 +430,10 @@ export namespace TASTool {
             index: 14,
         },
         decel: {
+            bulkType: BulkType.Movement,
             hasFixedOrder: true,
             hasOff: true,
-            registerActiveState: true,
-            durationIndex: -1,
+            activeUsageType: ActiveUsageType.Manual,
             arguments: [
                 { type: TokenType.Number, unit: "ups?", required: false },
             ],

@@ -230,7 +230,7 @@ export class TASScript {
                         activeTools[i].ticksRemaining! -= absoluteTick - previousLineTick;
 
                         if (activeTools[i].ticksRemaining! <= 0) {
-                            if (activeTools[i].tool === "autoaim") {
+                            if (TASTool.tools[activeTools[i].tool].activeUsageType == TASTool.ActiveUsageType.Manual) {
                                 activeTools[i].ticksRemaining = undefined;
                                 continue;
                             }
@@ -433,7 +433,32 @@ export class TASScript {
                 continue;
             }
 
+            // default stop behaviour when there's no parameters - clean all active tools
+            if (tool.metaToolType == TASTool.MetaToolType.Stop && (this.isNextType(TokenType.Semicolon) || this.tokenIndex >= this.tokens[this.lineIndex].length)) {
+                activeTools.splice(0, activeTools.length);
+            }
+
             var toolDuration: number | undefined = undefined;
+            var activeUsageType = tool.activeUsageType;
+
+            const onArgumentParsed = (arg: TASTool.ToolArgument) => {
+                if (arg.isDuration) {
+                    toolDuration = +this.tokens[this.lineIndex][this.tokenIndex - 1].text;
+                }
+                
+                if (arg.activeUsageTypeOverride != undefined) {
+                    activeUsageType = arg.activeUsageTypeOverride;
+                }
+
+                if (tool.metaToolType == TASTool.MetaToolType.Stop) {
+                    for (let i = activeTools.length - 1; i >= 0; i--) {
+                        if ((TASTool.tools[activeTools[i].tool].bulkType & arg.customPayload) != 0) {
+                            activeTools.splice(i, 1);
+                        }
+                    }
+                }
+            }
+
             if (tool.hasFixedOrder) blk: {
                 // Expect the tool arguments in the order they were defined in `tool.arguments`, as they have to appear in this order.
 
@@ -468,8 +493,7 @@ export class TASScript {
 
                         if (this.expectType(`Expected ${TokenType[arg.type].toLowerCase()}`, arg.type) !== undefined) {
                             this.validateArgument(arg);
-                            if (i === tool.durationIndex)
-                                toolDuration = +this.tokens[this.lineIndex][this.tokenIndex - 1].text;
+                            onArgumentParsed(arg);
                         }
                     }
                     else {
@@ -488,9 +512,7 @@ export class TASScript {
                                 this.validateArgument(arg);
                             }
 
-                            // Extract the tools duration
-                            if (i === tool.durationIndex)
-                                toolDuration = +this.tokens[this.lineIndex][this.tokenIndex - 1].text;
+                            onArgumentParsed(arg);
 
                             if (arg.children !== undefined) queue.splice(0, 0, ...arg.children!);
                             continue;
@@ -502,28 +524,14 @@ export class TASScript {
                 }
 
                 // Update `activeTools` with the new tool
-                if (tool.registerActiveState) {
-                    if (tool.durationIndex === -1) {
-                        activeTools.push(new TASTool.Tool(
-                            toolName,
-                            this.lineIndex,
-                            toolNameToken.start,
-                            this.tokens[this.lineIndex][this.tokenIndex - 1].end
-                        ));
-                    } else {
-                        // FIXME: autoaim's duration argument is optional, and if not supplied, autoaim will stay active until manually
-                        //        turned off. However, since it has a durationIndex, we are not handling it above. This should be handled
-                        //        in a more general way.
-                        if (toolName === "autoaim" || toolDuration !== undefined) {
-                            activeTools.push(new TASTool.Tool(
-                                toolName,
-                                this.lineIndex,
-                                toolNameToken.start,
-                                this.tokens[this.lineIndex][this.tokenIndex - 1].end,
-                                toolDuration
-                            ));
-                        }
-                    }
+                if (activeUsageType != TASTool.ActiveUsageType.None) {
+                    activeTools.push(new TASTool.Tool(
+                        toolName,
+                        this.lineIndex,
+                        toolNameToken.start,
+                        this.tokens[this.lineIndex][this.tokenIndex - 1].end,
+                        toolDuration
+                    ));
                 }
 
                 // Since we have matched all arguments of the tool, the tool usage should end here (either by semicolon or by the end of the line)
@@ -549,8 +557,10 @@ export class TASScript {
                             for (const toolArg of tool.arguments) {
                                 if (toolArg.type === argumentToken.type) {
                                     if (argumentToken.type === TokenType.String) {
-                                        if (toolArg.text !== undefined && toolArg.text === argumentToken.text)
+                                        if (toolArg.text !== undefined && toolArg.text === argumentToken.text) {
+                                            onArgumentParsed(toolArg);
                                             break blk;
+                                        }
                                     }
                                     else if (toolArg.type === TokenType.Number && toolArg.unit !== undefined) {
                                         if (this.tokenIndex + 1 < this.tokens[this.lineIndex].length) {
@@ -561,7 +571,10 @@ export class TASScript {
                                                 this.tokenIndex--;
                                                 const unitToken = this.tokens[this.lineIndex][this.tokenIndex];
                                                 // TODO: Emit diagnostics for incorrect units.
-                                                if (unitToken.text === toolArg.unit) break blk;
+                                                if (unitToken.text === toolArg.unit) {
+                                                    onArgumentParsed(toolArg);
+                                                    break blk;
+                                                }
                                             }
                                             // Decrement again, since the argument didn't match and we need to check the next
                                             // argument using the loop
@@ -588,7 +601,7 @@ export class TASScript {
 
                 // Update `activeTools` with the new tool
                 // But only do it if the tool wants to be registered in the list of active tools
-                if (tool.registerActiveState) {
+                if (activeUsageType != TASTool.ActiveUsageType.None) {
                     activeTools.push(new TASTool.Tool(
                         toolName,
                         this.lineIndex,
